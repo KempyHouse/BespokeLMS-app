@@ -27,9 +27,13 @@ class PasswordResetLinkController extends Controller
 
         try {
             $supabase->sendPasswordResetEmail((string) $request->validated('email'), $redirectTo);
-        } catch (SupabaseAuthException) {
-            // Deliberately swallowed: the response must never reveal whether an
-            // address is registered (no account enumeration).
+        } catch (SupabaseAuthException $e) {
+            // GoTrue returns HTTP 200 even for unknown addresses, so a failure here
+            // is never an account-enumeration signal — it is a genuine transport or
+            // service error (the host cannot reach Supabase, or the project URL /
+            // anon key is misconfigured). Log it so the failure is diagnosable
+            // server-side, while still showing the user the neutral message below.
+            report($e);
         }
 
         return back()->with('status', 'If that email address is registered, a password reset link is on its way.');
