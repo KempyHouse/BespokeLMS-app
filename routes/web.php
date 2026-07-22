@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PlatformController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -36,4 +37,17 @@ Route::middleware('guest')->group(function (): void {
 Route::middleware('auth')->group(function (): void {
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+
+    /*
+    | Platform-owner-only area. The "platform.owner" middleware returns 404 to
+    | anyone who is not the BespokeLMS platform owner, so the area is neither
+    | reachable nor disclosed to tenant users. Database access is independently
+    | enforced by Supabase RLS (is_platform_owner()).
+    */
+    Route::middleware('platform.owner')
+        ->prefix('platform')
+        ->name('platform.')
+        ->group(function (): void {
+            Route::get('/', [PlatformController::class, 'index'])->name('home');
+        });
 });

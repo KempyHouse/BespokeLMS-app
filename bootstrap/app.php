@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsurePlatformOwner;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -16,6 +17,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // already-authenticated users hitting a guest route go to the app.
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo('/');
+
+        // Route-middleware alias for the platform-owner-only area.
+        $middleware->alias([
+            'platform.owner' => EnsurePlatformOwner::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

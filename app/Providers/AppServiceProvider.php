@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Auth\SupabaseUser;
 use App\Auth\SupabaseUserProvider;
 use App\Support\Supabase\Contracts\AuthenticatesWithSupabase;
 use App\Support\Supabase\Contracts\ReadsProfiles;
@@ -12,6 +13,7 @@ use App\Support\Supabase\SupabaseProfiles;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -48,6 +50,13 @@ class AppServiceProvider extends ServiceProvider
         // Register the Supabase-backed user provider for the session guard.
         Auth::provider('supabase', function (Application $app, array $config): SupabaseUserProvider {
             return new SupabaseUserProvider($app->make('session.store'));
+        });
+
+        // Authorisation gate for the platform-owner tier — the app-layer mirror
+        // of the database's is_platform_owner() predicate. Use in controllers
+        // (Gate::authorize / $this->authorize) or Blade (@can('administer-platform')).
+        Gate::define('administer-platform', static function (SupabaseUser $user): bool {
+            return $user->isPlatformOwner();
         });
     }
 }
