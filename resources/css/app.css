@@ -96,6 +96,8 @@
 :root {
     --brand-glow-1: rgba(18, 181, 229, 0.45);
     --brand-glow-2: rgba(23, 195, 178, 0.3);
+    --height-header: 4.2rem;   /* 84px — sticky app header height; the workspace rail rests just below it */
+    --offset-workspace-rail: calc(var(--height-header) + var(--spacing) * 8);  /* 124px — sticky workspace rail rest = header height + main content top padding (pt-8) */
 }
 
 @layer base {
@@ -397,9 +399,9 @@
        instead of jumping when it reaches the end of the content column. */
     .rail-sticky {
         position: sticky;
-        top: 6.2rem;
+        top: var(--offset-workspace-rail);
         align-self: flex-start;
-        max-height: calc(100vh - 6rem);
+        max-height: calc(100vh - var(--offset-workspace-rail));
         overflow-y: auto;
         scrollbar-gutter: stable;
         overscroll-behavior: contain;
