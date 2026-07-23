@@ -1,3 +1,22 @@
+<style>
+    .platform-container { display: flex; gap: 1.5rem; }
+    .platform-sidebar { width: 14rem; flex-shrink: 0; }
+    .platform-sidebar nav { margin-bottom: 2rem; }
+    .platform-sidebar h2 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 0.75rem; }
+    .platform-sidebar ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+    .platform-sidebar a { display: block; padding: 0.5rem 0.75rem; font-size: 0.875rem; font-weight: 500; color: #3d515b; border-radius: 0.375rem; transition: background-color 0.2s; }
+    .platform-sidebar a:hover { background-color: #f5f5f5; }
+    .platform-sidebar a.active { background-color: #f5f5f5; font-weight: 600; }
+    .platform-content { flex: 1; }
+    .platform-content section { margin-bottom: 2rem; }
+    .platform-content h2 { font-size: 1.5rem; font-weight: 900; color: #3d515b; margin-bottom: 0.5rem; }
+    .platform-content p { font-size: 0.875rem; color: #6b7280; margin-top: 0.5rem; }
+    .platform-content article { border: 1px solid #e5e7eb; border-radius: 0.375rem; background-color: white; padding: 1.5rem; margin-top: 1.5rem; }
+    .back-link { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; }
+    .back-link a { display: inline-flex; border: 1px solid #e5e7eb; background-color: white; padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 600; color: #3d515b; border-radius: 0.375rem; transition: background-color 0.2s; text-decoration: none; }
+    .back-link a:hover { background-color: #f5f5f5; }
+</style>
+
 @extends('layouts.app')
 
 @section('title', 'Platform')
