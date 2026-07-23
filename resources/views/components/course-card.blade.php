@@ -108,7 +108,7 @@
             @endif
         </div>
 
-        <div class="mt-4 flex items-center justify-between gap-3 border-t border-line-soft pt-3">
+        <div class="mt-auto flex items-center justify-between gap-3 border-t border-line-soft pt-3">
             <span class="min-w-0 truncate text-caption font-semibold text-slatecard">{{ $course['price_label'] }}</span>
 
             @if ($state === 'coming_soon')
