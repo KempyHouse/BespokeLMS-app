@@ -104,6 +104,7 @@ Route::middleware('auth')->group(function (): void {
             // Course content builder — draft version + module/lesson/slide outline (migration 003).
             Route::get('courses/{course}/content', [CourseContentController::class, 'index'])->name('courses.content');
             Route::post('courses/{course}/content/draft', [CourseContentController::class, 'createDraft'])->name('courses.content.draft');
+            Route::post('courses/{course}/content/publish', [CourseContentController::class, 'publishDraft'])->name('courses.content.publish');
             Route::post('courses/{course}/content', [CourseContentController::class, 'handle'])->name('courses.content.action');
             // Per-slide payload editor (image+text / video / document).
             Route::get('courses/{course}/content/slides/{slide}/edit', [CourseContentController::class, 'editSlide'])->name('courses.slides.edit');

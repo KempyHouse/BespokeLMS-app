@@ -8,6 +8,7 @@ use App\Auth\SupabaseUser;
 use App\Http\Requests\ContentActionRequest;
 use App\Http\Requests\UpdateSlideRequest;
 use App\Support\Supabase\Contracts\WritesCourseContent;
+use App\Support\Supabase\Contracts\WritesCourseVersion;
 use App\Support\Supabase\Exceptions\SupabaseAuthException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -77,6 +78,30 @@ final class CourseContentController extends Controller
 
         return redirect()->route('platform.courses.content', $course)
             ->with('status', 'Draft version created — start adding modules below.');
+    }
+
+    /**
+     * Promote the working draft to the course's published version.
+     */
+    public function publishDraft(Request $request, WritesCourseVersion $writer, string $course): RedirectResponse
+    {
+        $draft = $this->workingDraft($course);
+        if ($draft === null) {
+            return redirect()->route('platform.courses.content', $course)
+                ->with('editorError', 'There is no draft version to publish.');
+        }
+
+        try {
+            $writer->publish($course, (string) $draft['id']);
+        } catch (SupabaseAuthException $e) {
+            report($e);
+
+            return redirect()->route('platform.courses.content', $course)
+                ->with('editorError', 'The draft could not be published right now. Please try again shortly.');
+        }
+
+        return redirect()->route('platform.courses.content', $course)
+            ->with('status', 'Version '.($draft['semver'] ?? '').' published — it is now the live version.');
     }
 
     /**

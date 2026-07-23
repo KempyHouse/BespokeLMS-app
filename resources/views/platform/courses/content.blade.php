@@ -60,8 +60,12 @@
                 <div>
                     <p class="text-xs font-bold uppercase tracking-wider text-teachhq">Editing draft</p>
                     <p class="text-sm font-semibold text-slatecard">Version {{ $draft['semver'] ?? '' }} · draft (v{{ $draft['version_no'] ?? '' }})</p>
+                    <p class="mt-0.5 text-mini text-ink-faint">Publishing makes this the live version. Learners already enrolled stay on the version they started.</p>
                 </div>
-                <p class="text-mini text-ink-faint">Promote to published via the Workflow tab when ready.</p>
+                <form method="POST" action="{{ route('platform.courses.content.publish', $c['id']) }}" onsubmit="return confirm('Publish this draft as the live version?');">
+                    @csrf
+                    <button type="submit" class="inline-flex items-center gap-1.5 rounded-control bg-button-primary px-4 py-2 text-sm font-semibold text-button-primary-text transition hover:bg-button-primary-hover focus:outline-none focus:ring-2 focus:ring-button-primary focus:ring-offset-2">Publish draft</button>
+                </form>
             </div>
 
             {{-- Module tree --}}
