@@ -355,4 +355,27 @@
     [data-dt-scrolled] .dt-freeze::after {
         opacity: 1;
     }
+    /* Right-anchored frozen column (row actions): pinned to the right edge with
+       a mirrored left-edge depth shadow, shown while there is still content to
+       scroll to (i.e. content is sliding underneath from the left). */
+    .dt-freeze-r {
+        position: sticky;
+        right: 0;
+    }
+    .dt-freeze-r::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        width: 0.75rem;
+        transform: translateX(-100%);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 200ms ease;
+        background: linear-gradient(to left, rgba(2, 8, 23, 0.16), rgba(2, 8, 23, 0));
+    }
+    [data-dt-scrolled-r] .dt-freeze-r::before {
+        opacity: 1;
+    }
 }

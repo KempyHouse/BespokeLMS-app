@@ -177,7 +177,7 @@
                                 </th>
                             @endforeach
                             @if ($rowActions)
-                                <th scope="col" class="w-px px-2"><span class="sr-only">Actions</span></th>
+                                <th scope="col" class="dt-freeze-r z-20 w-px whitespace-nowrap border-l border-line bg-paper px-2"><span class="sr-only">Actions</span></th>
                             @endif
                         </tr>
                     </thead>
@@ -244,7 +244,7 @@
                                     </td>
                                 @endforeach
                                 @if ($rowActions)
-                                    <td class="w-px px-2 py-3 text-right" data-dt-nonav>
+                                    <td class="dt-freeze-r z-10 w-px whitespace-nowrap border-l border-line bg-inherit px-2 py-3 text-right" data-dt-nonav>
                                         @if (! empty($acts))
                                             <div class="relative inline-block text-left">
                                                 <button type="button" data-dt-actions-toggle aria-haspopup="menu" aria-expanded="false"
@@ -512,10 +512,17 @@
             var scrollWrap = root.querySelector('[data-dt-scroll]');
             if (scrollWrap) {
                 var syncScrolled = function () {
+                    var max = scrollWrap.scrollWidth - scrollWrap.clientWidth;
+                    // Left column shadow: shown once scrolled away from the start.
                     if (scrollWrap.scrollLeft > 0) { scrollWrap.setAttribute('data-dt-scrolled', ''); }
                     else { scrollWrap.removeAttribute('data-dt-scrolled'); }
+                    // Right column shadow: shown while there is still content to the
+                    // right (i.e. not scrolled fully to the end).
+                    if (scrollWrap.scrollLeft < max - 1) { scrollWrap.setAttribute('data-dt-scrolled-r', ''); }
+                    else { scrollWrap.removeAttribute('data-dt-scrolled-r'); }
                 };
                 scrollWrap.addEventListener('scroll', syncScrolled, { passive: true });
+                window.addEventListener('resize', syncScrolled);
                 syncScrolled();
             }
 
