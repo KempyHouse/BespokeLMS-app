@@ -247,3 +247,5 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 @endsection
+
+<!-- Platform Console - Deployment trigger: 1784790552 -->
