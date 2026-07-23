@@ -134,8 +134,10 @@ class AppServiceProvider extends ServiceProvider
 
             /** @var ThemeResolver $resolver */
             $resolver = $this->app->make(ThemeResolver::class);
+            $tokens = $resolver->resolve($organizationId);
 
-            $view->with('brandTokensCss', $resolver->cssFor($organizationId));
+            $view->with('brandTokensCss', $tokens['light']);
+            $view->with('brandTokensDarkCss', $tokens['dark']);
         });
     }
 }
