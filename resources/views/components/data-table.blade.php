@@ -155,7 +155,7 @@
                     <thead>
                         <tr class="bg-paper">
                             @if ($selectable)
-                                <th scope="col" class="dt-freeze z-20 w-px whitespace-nowrap bg-paper px-3 py-3">
+                                <th scope="col" class="dt-freeze z-20 w-px whitespace-nowrap border-r border-line bg-paper px-3 py-3">
                                     <input type="checkbox" data-dt-selectall aria-label="Select all rows on this page"
                                            class="h-4 w-4 rounded border-line text-teachhq focus:ring-teachhq">
                                 </th>
@@ -177,7 +177,7 @@
                                 </th>
                             @endforeach
                             @if ($rowActions)
-                                <th scope="col" class="dt-freeze-r z-20 w-px whitespace-nowrap bg-paper px-2"><span class="sr-only">Actions</span></th>
+                                <th scope="col" class="w-px px-2"><span class="sr-only">Actions</span></th>
                             @endif
                         </tr>
                     </thead>
@@ -200,7 +200,7 @@
                                 @foreach (($row['filters'] ?? []) as $fk => $fv) data-filter-{{ $fk }}="{{ $fv }}" @endforeach
                                 @foreach ($sortAttrs as $sk => $sv) data-sort-{{ $sk }}="{{ $sv }}" @endforeach>
                                 @if ($selectable)
-                                    <td class="dt-freeze z-10 w-px whitespace-nowrap bg-inherit px-3 py-3" data-dt-nonav>
+                                    <td class="dt-freeze z-10 w-px whitespace-nowrap border-r border-line bg-inherit px-3 py-3" data-dt-nonav>
                                         <input type="checkbox" data-dt-select value="{{ $rowId }}" aria-label="Select row"
                                                class="h-4 w-4 rounded border-line text-teachhq focus:ring-teachhq">
                                     </td>
@@ -244,7 +244,7 @@
                                     </td>
                                 @endforeach
                                 @if ($rowActions)
-                                    <td class="dt-freeze-r z-10 w-px whitespace-nowrap bg-inherit px-2 py-3 text-right" data-dt-nonav>
+                                    <td class="w-px px-2 py-3 text-right" data-dt-nonav>
                                         @if (! empty($acts))
                                             <div class="relative inline-block text-left">
                                                 <button type="button" data-dt-actions-toggle aria-haspopup="menu" aria-expanded="false"
@@ -402,14 +402,8 @@
                 var options = Array.prototype.slice.call(dd.querySelectorAll('[data-dt-option]'));
                 options.forEach(function (opt) {
                     opt.addEventListener('click', function () {
-                        var val = opt.getAttribute('data-dt-option') || '';
-                        dd.setAttribute('data-value', val);
-                        if (labelEl) {
-                            labelEl.textContent = opt.getAttribute('data-dt-option-label') || '';
-                            // Darken the label once a real value is chosen; grey for "All".
-                            labelEl.classList.toggle('text-slatecard', val !== '');
-                            labelEl.classList.toggle('text-ink-soft', val === '');
-                        }
+                        dd.setAttribute('data-value', opt.getAttribute('data-dt-option') || '');
+                        if (labelEl) labelEl.textContent = opt.getAttribute('data-dt-option-label') || '';
                         options.forEach(function (o) { o.classList.remove('bg-teachhq-soft', 'font-semibold', 'text-teachhq-dark'); o.classList.add('text-slatecard'); });
                         opt.classList.add('bg-teachhq-soft', 'font-semibold', 'text-teachhq-dark'); opt.classList.remove('text-slatecard');
                         dd.removeAttribute('open');
@@ -480,10 +474,7 @@
                 });
             }
 
-            /* Row-actions dropdown. The menu is fixed-positioned AND portaled to
-               <body> on open: the sticky/frozen action cells each create a
-               stacking context, which would otherwise trap the menu behind later
-               rows. Moving it to the body escapes those contexts entirely. */
+            /* Row-actions dropdown (fixed-positioned to escape the scroll clip). */
             var openMenu = null;
             function closeMenu() {
                 if (openMenu) { openMenu.menu.classList.add('hidden'); openMenu.btn.setAttribute('aria-expanded', 'false'); openMenu = null; }
@@ -496,6 +487,8 @@
                     var wasOpen = openMenu && openMenu.menu === menu;
                     closeMenu();
                     if (wasOpen) return;
+                    // Portal the menu to <body> so no ancestor's overflow or
+                    // transform can clip/trap this fixed-positioned dropdown.
                     if (menu.parentNode !== document.body) { document.body.appendChild(menu); }
                     menu.classList.remove('hidden');
                     var r = btn.getBoundingClientRect();
@@ -522,20 +515,10 @@
             var scrollWrap = root.querySelector('[data-dt-scroll]');
             if (scrollWrap) {
                 var syncScrolled = function () {
-                    var max = scrollWrap.scrollWidth - scrollWrap.clientWidth;
-                    // Only frozen-column dividers/shadows when the table overflows.
-                    if (max > 1) { scrollWrap.setAttribute('data-dt-overflow', ''); }
-                    else { scrollWrap.removeAttribute('data-dt-overflow'); }
-                    // Left column shadow: shown once scrolled away from the start.
                     if (scrollWrap.scrollLeft > 0) { scrollWrap.setAttribute('data-dt-scrolled', ''); }
                     else { scrollWrap.removeAttribute('data-dt-scrolled'); }
-                    // Right column shadow: shown while there is still content to the
-                    // right (i.e. not scrolled fully to the end).
-                    if (scrollWrap.scrollLeft < max - 1) { scrollWrap.setAttribute('data-dt-scrolled-r', ''); }
-                    else { scrollWrap.removeAttribute('data-dt-scrolled-r'); }
                 };
                 scrollWrap.addEventListener('scroll', syncScrolled, { passive: true });
-                window.addEventListener('resize', syncScrolled);
                 syncScrolled();
             }
 

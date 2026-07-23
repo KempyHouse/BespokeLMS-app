@@ -81,9 +81,16 @@
                     ['value' => 'allowlist', 'label' => 'Selected tenants'],
                     ['value' => 'private', 'label' => 'Private'],
                 ]],
-                ['key' => 'owner', 'label' => 'Owner', 'options' => $ownerOptions ?? []],
-                ['key' => 'category', 'label' => 'Category', 'options' => $categoryOptions ?? []],
             ];
+
+            // Only surface the Owner filter once more than one owner exists
+            // (today every global course is platform-owned, so it would be a
+            // single-option, no-op filter — it appears when operators author).
+            if (count($ownerOptions ?? []) > 1) {
+                $courseFilters[] = ['key' => 'owner', 'label' => 'Owner', 'options' => $ownerOptions];
+            }
+
+            $courseFilters[] = ['key' => 'category', 'label' => 'Category', 'options' => $categoryOptions ?? []];
 
             $courseRows = [];
             foreach ($courses ?? [] as $c) {
