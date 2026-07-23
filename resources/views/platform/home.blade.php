@@ -22,7 +22,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#courses" data-section="courses"
+                        <a href="{{ route('platform.courses') }}"
                            class="rail-item flex items-center gap-2.5 border-b border-line py-2.5 text-sm font-medium text-slatecard transition hover:text-teachhq focus:outline-none">
                             <svg class="nav-ico h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
                             <span class="min-w-0 flex-1 truncate">Global Courses</span>

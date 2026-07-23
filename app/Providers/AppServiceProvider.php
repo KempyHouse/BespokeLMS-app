@@ -8,6 +8,7 @@ use App\Auth\SupabaseUser;
 use App\Auth\SupabaseUserProvider;
 use App\Support\Supabase\Contracts\AuthenticatesWithSupabase;
 use App\Support\Supabase\Contracts\ReadsAiIntegrations;
+use App\Support\Supabase\Contracts\ReadsCourses;
 use App\Support\Supabase\Contracts\ReadsDesignTokens;
 use App\Support\Supabase\Contracts\ReadsOrganizations;
 use App\Support\Supabase\Contracts\ReadsProfiles;
@@ -17,6 +18,7 @@ use App\Support\Supabase\Contracts\WritesBrandKits;
 use App\Support\Supabase\Contracts\WritesProfiles;
 use App\Support\Supabase\SupabaseAiIntegrations;
 use App\Support\Supabase\SupabaseBrandKits;
+use App\Support\Supabase\SupabaseCourses;
 use App\Support\Supabase\SupabaseDesignTokens;
 use App\Support\Supabase\SupabaseOrganizations;
 use App\Support\Supabase\SupabaseProfiles;
@@ -63,6 +65,18 @@ class AppServiceProvider extends ServiceProvider
             $config = $app['config']->get('services.supabase', []);
 
             return new SupabaseOrganizations(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+
+        $this->app->singleton(ReadsCourses::class, function (Application $app): SupabaseCourses {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseCourses(
                 $app->make(HttpFactory::class),
                 (string) ($config['url'] ?? ''),
                 (string) ($config['service_role_key'] ?? ''),

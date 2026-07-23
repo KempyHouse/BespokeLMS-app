@@ -6,6 +6,7 @@ use App\Http\Controllers\AiIntegrationController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\CourseController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MyWorkspaceController;
 use App\Http\Controllers\PlatformController;
@@ -70,6 +71,10 @@ Route::middleware('auth')->group(function (): void {
         ->name('platform.')
         ->group(function (): void {
             Route::get('/', [PlatformController::class, 'index'])->name('home');
+
+            // Global Courses console — the ecosystem-wide course catalogue
+            // (platform-owned courses that cascade to tenants + operator courses).
+            Route::get('courses', [CourseController::class, 'index'])->name('courses');
 
             // Per-tenant admin console (configuration hub). {tenant} is an
             // organisation UUID; the controller 404s an unknown id.
