@@ -24,8 +24,8 @@
                         @if (! empty($course['cover_url']))
                             <img src="{{ $course['cover_url'] }}" alt="" class="h-full w-full object-cover">
                         @else
-                            <span class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-teachhq-soft to-surface">
-                                <svg class="h-14 w-14 text-teachhq opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+                            <span class="absolute inset-0 flex items-center justify-center bg-teachhq-soft">
+                                <svg class="h-14 w-14 text-teachhq" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
                             </span>
                         @endif
                     </div>

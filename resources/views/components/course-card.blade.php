@@ -37,8 +37,8 @@
                  class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
         @else
             {{-- Token-driven placeholder until a real cover image is uploaded. --}}
-            <span class="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-teachhq-soft to-surface">
-                <svg class="h-10 w-10 text-teachhq opacity-50" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+            <span class="absolute inset-0 flex items-center justify-center bg-teachhq-soft">
+                <svg class="h-10 w-10 text-teachhq" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
             </span>
         @endif
 
@@ -51,7 +51,7 @@
         @elseif ($state === 'in_progress')
             <span class="absolute left-3 top-3 inline-flex items-center rounded-full bg-teachhq px-2 py-0.5 text-mini font-semibold text-on-brand shadow-quiet">In progress</span>
         @elseif ($state === 'coming_soon')
-            <span class="absolute left-3 top-3 inline-flex items-center rounded-full bg-surface/90 px-2 py-0.5 text-mini font-semibold text-ink-muted shadow-quiet ring-1 ring-line">Coming soon</span>
+            <span class="absolute left-3 top-3 inline-flex items-center rounded-full bg-surface px-2 py-0.5 text-mini font-semibold text-ink-muted shadow-quiet ring-1 ring-line">Coming soon</span>
         @elseif ($state === 'assigned' && ! empty($course['due_label']))
             <span class="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-mini font-semibold shadow-quiet {{ $dueToneClass }}">
                 <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>

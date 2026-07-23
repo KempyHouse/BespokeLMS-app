@@ -15,7 +15,7 @@
         </nav>
 
         @if (! empty($libraryError))
-            <div class="rounded-panel border border-rag-red/30 bg-rag-red-soft p-6 text-sm text-rag-red" role="alert">
+            <div class="rounded-panel border border-line bg-rag-red-soft p-6 text-sm text-rag-red" role="alert">
                 {{ $libraryError }}
             </div>
         @else
@@ -50,8 +50,8 @@
                             <div @class([
                                     'rounded-control border p-3',
                                     'border-line bg-paper' => $stat['tone'] === 'plain',
-                                    'border-teachhq/20 bg-teachhq-soft' => $stat['tone'] === 'brand',
-                                    'border-rag-green/20 bg-rag-green-soft' => $stat['tone'] === 'green',
+                                    'border-line bg-teachhq-soft' => $stat['tone'] === 'brand',
+                                    'border-line bg-rag-green-soft' => $stat['tone'] === 'green',
                                 ])>
                                 <div @class([
                                     'text-2xl font-black tabular-nums',
@@ -68,7 +68,7 @@
 
             {{-- Assigned banner --}}
             @if (! empty($assigned))
-                <div class="mt-5 flex flex-wrap items-center gap-4 rounded-panel border border-rag-amber/25 bg-rag-amber-soft p-4 sm:p-5">
+                <div class="mt-5 flex flex-wrap items-center gap-4 rounded-panel border border-line bg-rag-amber-soft p-4 sm:p-5">
                     <span class="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-surface text-rag-amber shadow-quiet">
                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                     </span>
@@ -108,7 +108,7 @@
                     <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by category">
                         <button type="button" data-cat-chip="" aria-pressed="true"
                                 class="cat-chip rounded-full bg-teachhq px-3 py-1.5 text-mini font-semibold text-on-brand transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">
-                            All <span class="ml-1 tabular-nums opacity-80">{{ $summary['total'] }}</span>
+                            All <span class="ml-1 tabular-nums">{{ $summary['total'] }}</span>
                         </button>
                         @foreach ($categoryOptions as $cat)
                             <button type="button" data-cat-chip="{{ $cat['value'] }}" aria-pressed="false"
