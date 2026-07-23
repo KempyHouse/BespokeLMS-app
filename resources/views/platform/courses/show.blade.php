@@ -21,11 +21,6 @@
         <x-workspace-switcher active="platform" />
 
         <div class="rounded-control bg-paper p-6">
-            <a href="{{ route('platform.courses') }}"
-               class="inline-flex items-center gap-1.5 text-xs font-semibold text-teachhq transition hover:text-teachhq-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq focus-visible:ring-offset-2">
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-                Global Courses
-            </a>
             <p class="mt-3 text-xs font-bold uppercase tracking-wider text-teachhq">Course</p>
             <h1 class="mt-1 text-xl font-black text-slatecard">{{ $course['title'] }}</h1>
             <div class="mt-3 flex flex-wrap gap-1.5">
@@ -44,13 +39,18 @@
                     <a href="#{{ $anchor }}" class="rounded-control px-2 py-1.5 font-medium text-slatecard transition hover:bg-surface hover:text-teachhq focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">{{ $label }}</a>
                 @endforeach
                 <a href="{{ route('platform.courses.pricing', $course['id']) }}" class="rounded-control px-2 py-1.5 font-medium text-slatecard transition hover:bg-surface hover:text-teachhq focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Pricing &amp; retakes</a>
-                <a href="{{ route('platform.courses.availability', $course['id']) }}" class="rounded-control px-2 py-1.5 font-medium text-slatecard transition hover:bg-surface hover:text-teachhq focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Availability &amp; authors</a>
             </nav>
         </div>
     </aside>
 
     <!-- Main content -->
     <main class="min-w-0 flex-1">
+        <x-breadcrumb :items="[
+            ['label' => 'Platform', 'href' => route('platform.home')],
+            ['label' => 'Global Courses', 'href' => route('platform.courses')],
+            ['label' => $course['title']],
+        ]" />
+
         <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0">
                 <p class="text-xs font-bold uppercase tracking-wider text-teachhq">BespokeLMS &middot; Global catalogue</p>

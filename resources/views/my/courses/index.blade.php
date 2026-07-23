@@ -7,12 +7,10 @@
     <x-my-nav active="course-library" />
 
     <main class="min-w-0 flex-1">
-        {{-- Breadcrumb --}}
-        <nav class="mb-4 flex items-center gap-1.5 text-mini text-ink-soft" aria-label="Breadcrumb">
-            <a href="{{ route('my.home') }}" class="transition hover:text-teachhq">My workspace</a>
-            <svg class="h-3.5 w-3.5 text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
-            <span class="font-semibold text-slatecard">Course Library</span>
-        </nav>
+        <x-breadcrumb :items="[
+            ['label' => 'My workspace', 'href' => route('my.home')],
+            ['label' => 'Course Library'],
+        ]" />
 
         @if (! empty($libraryError))
             <div class="rounded-panel border border-line bg-rag-red-soft p-6 text-sm text-rag-red" role="alert">
