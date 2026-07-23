@@ -397,7 +397,7 @@
        instead of jumping when it reaches the end of the content column. */
     .rail-sticky {
         position: sticky;
-        top: 6rem;
+        top: 6.2rem;
         align-self: flex-start;
         max-height: calc(100vh - 6rem);
         overflow-y: auto;
