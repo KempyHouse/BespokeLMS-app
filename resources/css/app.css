@@ -39,24 +39,44 @@
     /* RAG status */
     --color-rag-red: #e5484d;
     --color-rag-red-soft: #fef2f2;
-    --color-rag-amber: #f5a524;
-    --color-rag-green: #2e9e5b;
+    --color-rag-amber: #d97706;
+    --color-rag-amber-soft: #fffbeb;
+    --color-rag-green: #059669;
+    --color-rag-green-soft: #ecfdf5;
+
+    /* Scrim behind slide-in drawers / modals */
+    --color-scrim: rgba(15, 23, 42, 0.4);
 
     /* Label type scale */
     --text-caption: 0.8125rem; /* 13px */
     --text-mini: 0.75rem;      /* 12px */
     --text-micro: 0.6875rem;   /* 11px */
+    --text-nano: 0.625rem;     /* 10px — eyebrow / category labels */
 
     /* Layout widths + icon sizing */
     --spacing-rail: 18.75rem;  /* 300px — left navigation rail */
     --spacing-search: 30rem;   /* 480px — header search field */
     --spacing-menu: 17.5rem;   /* 280px — account dropdown */
     --spacing-icon: 1.125rem;  /* 18px — inline nav/action icons */
+    --spacing-drawer: 25rem;   /* 400px — right slide-in drawers */
+    --spacing-bubble: 17rem;   /* 272px — chat message max width */
+    --spacing-dot: 0.375rem;   /* 6px — chat typing indicator dot */
 
     --shadow-cta: 0 10px 30px -8px rgba(18, 181, 229, 0.5);
     --shadow-panel: 0 1px 2px rgba(2, 8, 23, 0.06), 0 8px 24px -12px rgba(2, 8, 23, 0.25);
+    --shadow-quiet: 0 1px 2px rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.05);
+    --shadow-drawer: -12px 0 48px -16px rgba(2, 8, 23, 0.38);
     --radius-control: 0.85rem;
     --radius-panel: 1.1rem;
+
+    /* Motion */
+    --duration-drawer: 480ms;  /* slide-in drawers + scrim */
+    --duration-notif: 500ms;   /* notification row entrance */
+    --duration-typing: 1s;     /* chat typing loop */
+    --ease-drawer: cubic-bezier(0.16, 1, 0.3, 1);
+
+    /* Effects */
+    --blur-scrim: 2px;         /* drawer scrim backdrop blur */
 }
 
 :root {
@@ -118,5 +138,109 @@
             transition: none !important;
             animation: none !important;
         }
+    }
+}
+
+/*
+ |----------------------------------------------------------------------------
+ | Slide-in side drawers (notifications + help chat) and the platform rail
+ | icon states. Ported from the working prototype, expressed with tokens.
+ |----------------------------------------------------------------------------
+ */
+@layer components {
+    /* Right-edge slide-in drawer shell */
+    .app-drawer {
+        position: fixed;
+        top: 0;
+        right: 0;
+        z-index: 80;
+        display: flex;
+        height: 100%;
+        width: var(--spacing-drawer);
+        max-width: 90vw;
+        flex-direction: column;
+        background: var(--color-surface);
+        box-shadow: var(--shadow-drawer);
+        transform: translateX(100%);
+        transition: transform var(--duration-drawer) var(--ease-drawer);
+        will-change: transform;
+    }
+    .app-drawer.is-open {
+        transform: translateX(0);
+    }
+
+    /* Dimmed scrim behind an open drawer */
+    .app-drawer-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 70;
+        background: var(--color-scrim);
+        backdrop-filter: blur(var(--blur-scrim));
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity var(--duration-drawer) ease-out;
+    }
+    .app-drawer-overlay.is-open {
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    /* Staggered entrance for the notification rows */
+    #notifList > button {
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity var(--duration-notif) ease, transform var(--duration-notif) var(--ease-drawer);
+    }
+    .app-drawer.is-open #notifList > button {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    .app-drawer.is-open #notifList > button:nth-child(1) { transition-delay: 0.10s; }
+    .app-drawer.is-open #notifList > button:nth-child(2) { transition-delay: 0.16s; }
+    .app-drawer.is-open #notifList > button:nth-child(3) { transition-delay: 0.22s; }
+    .app-drawer.is-open #notifList > button:nth-child(4) { transition-delay: 0.28s; }
+    .app-drawer.is-open #notifList > button:nth-child(5) { transition-delay: 0.34s; }
+    .app-drawer.is-open #notifList > button:nth-child(6) { transition-delay: 0.40s; }
+    .app-drawer.is-open #notifList > button:nth-child(n + 7) { transition-delay: 0.46s; }
+
+    /* Help-chat typing indicator */
+    .chat-typing {
+        display: inline-flex;
+        gap: 4px;
+        align-items: center;
+    }
+    .chat-typing i {
+        width: var(--spacing-dot);
+        height: var(--spacing-dot);
+        border-radius: 9999px;
+        background: var(--color-ink-faint);
+        display: inline-block;
+        animation: chatDot var(--duration-typing) infinite ease-in-out;
+    }
+    .chat-typing i:nth-child(2) { animation-delay: 0.15s; }
+    .chat-typing i:nth-child(3) { animation-delay: 0.30s; }
+    @keyframes chatDot {
+        0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+        40% { opacity: 1; transform: translateY(-3px); }
+    }
+
+    /* Platform rail icons: rest at ink-faint, brand on hover/active */
+    .rail-item .nav-ico {
+        color: var(--color-ink-faint);
+        transition: color 0.15s ease;
+    }
+    .rail-item:hover .nav-ico,
+    .rail-item.text-teachhq-dark .nav-ico {
+        color: var(--color-teachhq);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .app-drawer,
+        .app-drawer-overlay,
+        #notifList > button {
+            transition-duration: 0.001ms !important;
+            transition-delay: 0ms !important;
+        }
+        .chat-typing i { animation: none !important; }
     }
 }
