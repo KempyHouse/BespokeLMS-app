@@ -165,42 +165,48 @@ final class AiIntegrationController extends Controller
             'monthly_budget_usd' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
         ]);
 
-        // Merge usage controls into the existing options (preserve capability etc).
-        $options = is_array($current['options'] ?? null) ? $current['options'] : [];
-        $options['monthly_token_limit'] = ($validated['monthly_token_limit'] ?? null) !== null ? (int) $validated['monthly_token_limit'] : null;
-        $options['monthly_budget_usd'] = ($validated['monthly_budget_usd'] ?? null) !== null ? (float) $validated['monthly_budget_usd'] : null;
-
-        $attrs = [
-            'is_enabled' => $request->boolean('is_enabled'),
-            'default_model' => ($validated['default_model'] ?? '') !== '' ? $validated['default_model'] : null,
-            'base_url' => ($validated['base_url'] ?? '') !== '' ? $validated['base_url'] : null,
-            'options' => $options,
-        ];
-
-        // Key handling: a submitted key is encrypted server-side; an explicit
-        // remove clears it; otherwise the stored key is left untouched.
-        $hasKey = (bool) ($current['has_key'] ?? false);
-        if ($request->boolean('remove_key')) {
-            $attrs['api_key_cipher'] = null;
-            $hasKey = false;
-        } elseif (($validated['api_key'] ?? '') !== '') {
-            $attrs['api_key_cipher'] = Crypt::encryptString((string) $validated['api_key']);
-            $hasKey = true;
-        }
-
-        // Status reflects configuration: needs a key to be "connected".
-        if (! $hasKey) {
-            $attrs['status'] = 'unconfigured';
-        } else {
-            $attrs['status'] = $attrs['is_enabled'] ? 'connected' : 'disabled';
-        }
-
+        // Build + persist the update. Any failure degrades to a message on the
+        // page rather than a 500; the exception is also reported for the logs.
         try {
+            // Merge usage controls into the existing options (preserve capability etc).
+            $options = is_array($current['options'] ?? null) ? $current['options'] : [];
+            $options['monthly_token_limit'] = ($validated['monthly_token_limit'] ?? null) !== null ? (int) $validated['monthly_token_limit'] : null;
+            $options['monthly_budget_usd'] = ($validated['monthly_budget_usd'] ?? null) !== null ? (float) $validated['monthly_budget_usd'] : null;
+
+            $attrs = [
+                'is_enabled' => $request->boolean('is_enabled'),
+                'default_model' => ($validated['default_model'] ?? '') !== '' ? $validated['default_model'] : null,
+                'base_url' => ($validated['base_url'] ?? '') !== '' ? $validated['base_url'] : null,
+                'options' => $options,
+            ];
+
+            // Key handling: a submitted key is encrypted server-side; an explicit
+            // remove clears it; otherwise the stored key is left untouched.
+            $hasKey = (bool) ($current['has_key'] ?? false);
+            if ($request->boolean('remove_key')) {
+                $attrs['api_key_cipher'] = null;
+                $hasKey = false;
+            } elseif (($validated['api_key'] ?? '') !== '') {
+                $attrs['api_key_cipher'] = Crypt::encryptString((string) $validated['api_key']);
+                $hasKey = true;
+            }
+
+            // Status reflects configuration: needs a key to be "connected".
+            if (! $hasKey) {
+                $attrs['status'] = 'unconfigured';
+            } else {
+                $attrs['status'] = $attrs['is_enabled'] ? 'connected' : 'disabled';
+            }
+
             $writes->update($integration, $attrs);
         } catch (SupabaseAuthException $e) {
             report($e);
 
             return redirect()->route('platform.ai')->with('aiError', 'That integration could not be saved right now. Please try again shortly.');
+        } catch (\Throwable $e) {
+            report($e);
+
+            return redirect()->route('platform.ai')->with('aiError', 'Could not save this integration: '.class_basename($e).' — '.$e->getMessage());
         }
 
         return redirect()->route('platform.ai')->with('status', trim((string) ($current['display_name'] ?? 'Integration')).' saved.');
