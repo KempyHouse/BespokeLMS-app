@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Auth\SupabaseUser;
 use App\Http\Requests\ContentActionRequest;
+use App\Http\Requests\UpdateSlideRequest;
 use App\Support\Supabase\Contracts\WritesCourseContent;
 use App\Support\Supabase\Exceptions\SupabaseAuthException;
 use Illuminate\Http\RedirectResponse;
@@ -101,6 +102,50 @@ final class CourseContentController extends Controller
 
         return redirect()->route('platform.courses.content', $course)
             ->with('status', 'Saved.');
+    }
+
+    /**
+     * The per-type payload editor for a single slide (image+text / video /
+     * document) plus its completion rule.
+     */
+    public function editSlide(Request $request, string $course, string $slide): View
+    {
+        /** @var SupabaseUser $user */
+        $user = $request->user();
+
+        $courseRow = $this->loadCourse($course);
+        $slideRow = $this->loadSlide($slide);
+
+        if ($courseRow === null || $slideRow === null || (string) ($slideRow['_course_id'] ?? '') !== $course) {
+            abort(404);
+        }
+
+        return view('platform.courses.slide-edit', [
+            'user' => $user,
+            'course' => $courseRow,
+            'slide' => $slideRow,
+        ]);
+    }
+
+    public function updateSlide(UpdateSlideRequest $request, WritesCourseContent $writer, string $course, string $slide): RedirectResponse
+    {
+        $slideRow = $this->loadSlide($slide);
+        if ($slideRow === null || (string) ($slideRow['_course_id'] ?? '') !== $course) {
+            abort(404);
+        }
+
+        try {
+            $writer->updateRow('slides', $slide, $request->slideFields());
+        } catch (SupabaseAuthException $e) {
+            report($e);
+
+            return redirect()->route('platform.courses.slides.edit', ['course' => $course, 'slide' => $slide])
+                ->withInput()
+                ->with('editorError', 'The slide could not be saved right now. Please try again shortly.');
+        }
+
+        return redirect()->route('platform.courses.slides.edit', ['course' => $course, 'slide' => $slide])
+            ->with('status', 'Slide saved.');
     }
 
     private function dispatch(ContentActionRequest $request, WritesCourseContent $writer, string $versionId): void
@@ -234,6 +279,31 @@ final class CourseContentController extends Controller
         $rows = $this->get('/rest/v1/courses', ['select' => 'id,title,slug', 'id' => 'eq.'.$courseId]);
 
         return $rows[0] ?? null;
+    }
+
+    /**
+     * A single slide with its resolved owning course id (via the
+     * lesson→module→version chain) for the ownership check. Adds a synthetic
+     * `_course_id` key. Returns null if the slide does not exist.
+     *
+     * @return array<string,mixed>|null
+     */
+    private function loadSlide(string $slideId): ?array
+    {
+        $rows = $this->get('/rest/v1/slides', [
+            'select' => 'id,lesson_id,type,title,payload,is_required,completion_rule,'
+                .'lessons(module_id,modules(course_version_id,course_versions(course_id)))',
+            'id' => 'eq.'.$slideId,
+        ]);
+
+        $slide = $rows[0] ?? null;
+        if ($slide === null) {
+            return null;
+        }
+
+        $slide['_course_id'] = $slide['lessons']['modules']['course_versions']['course_id'] ?? '';
+
+        return $slide;
     }
 
     /**

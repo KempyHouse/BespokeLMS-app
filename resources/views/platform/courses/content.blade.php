@@ -107,6 +107,7 @@
                                                 <form method="POST" action="{{ $act }}"><input type="hidden" name="action" value="move_slide"><input type="hidden" name="id" value="{{ $slide['id'] }}"><input type="hidden" name="parent_id" value="{{ $lesson['id'] }}"><input type="hidden" name="direction" value="down">@csrf<button type="submit" class="{{ $iconBtn }} h-6 w-6" @disabled($si === count($lesson['slides']) - 1) aria-label="Move slide down">▼</button></form>
                                             </div>
                                             <span class="rounded-control bg-teachhq/10 px-2 py-0.5 text-micro font-bold uppercase tracking-wide text-teachhq">{{ $typeLabel[$slide['type']] ?? $slide['type'] }}</span>
+                                            <a href="{{ route('platform.courses.slides.edit', ['course' => $c['id'], 'slide' => $slide['id']]) }}" class="rounded-control border border-line px-2 py-1 text-micro font-semibold text-teachhq transition hover:bg-paper">Edit content</a>
                                             <form method="POST" action="{{ $act }}" class="flex min-w-0 flex-1 items-center gap-2">
                                                 <input type="hidden" name="action" value="rename_slide"><input type="hidden" name="id" value="{{ $slide['id'] }}">@csrf
                                                 <input type="text" name="title" value="{{ $slide['title'] ?? '' }}" placeholder="Untitled slide" class="{{ $fieldCls }} min-w-0 flex-1 py-1 text-xs" aria-label="Slide title">

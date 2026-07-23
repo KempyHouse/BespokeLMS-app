@@ -105,6 +105,9 @@ Route::middleware('auth')->group(function (): void {
             Route::get('courses/{course}/content', [CourseContentController::class, 'index'])->name('courses.content');
             Route::post('courses/{course}/content/draft', [CourseContentController::class, 'createDraft'])->name('courses.content.draft');
             Route::post('courses/{course}/content', [CourseContentController::class, 'handle'])->name('courses.content.action');
+            // Per-slide payload editor (image+text / video / document).
+            Route::get('courses/{course}/content/slides/{slide}/edit', [CourseContentController::class, 'editSlide'])->name('courses.slides.edit');
+            Route::put('courses/{course}/content/slides/{slide}', [CourseContentController::class, 'updateSlide'])->name('courses.slides.update');
 
             // Widget Library — the dashboard widget catalogue: which roles may
             // add each widget, its status, and its default size. Saving requires
