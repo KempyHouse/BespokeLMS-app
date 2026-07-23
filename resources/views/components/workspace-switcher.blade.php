@@ -31,7 +31,7 @@
     @foreach ($tabs as $tab)
         @if ($tab['key'] === $active)
             <span role="tab" aria-selected="true" aria-current="page"
-                  class="rounded-full bg-teachhq py-2 text-center text-on-brand shadow-panel">{{ $tab['label'] }}</span>
+                  class="ws-bounce rounded-full bg-teachhq py-2 text-center text-on-brand shadow-panel">{{ $tab['label'] }}</span>
         @else
             <a href="{{ $tab['href'] }}" role="tab" aria-selected="false"
                class="rounded-full py-2 text-center text-ink-soft transition hover:text-slatecard focus:outline-none focus:ring-2 focus:ring-teachhq">{{ $tab['label'] }}</a>

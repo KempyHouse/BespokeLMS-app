@@ -5,20 +5,11 @@
 @section('content')
 <div class="flex flex-col items-start gap-6 lg:flex-row lg:items-stretch lg:gap-8">
     <!-- Left rail -->
-    <aside class="w-full lg:w-rail lg:flex-none">
+    <aside class="w-full lg:w-rail lg:flex-none lg:sticky lg:top-24 lg:self-start">
         {{-- Workspace switcher (shared component) --}}
         <x-workspace-switcher active="platform" />
 
         <div class="rounded-control bg-paper p-6">
-            <!-- Owner identity -->
-            <div class="mb-6 border-b border-line pb-5">
-                <p class="text-xs font-bold uppercase tracking-wider text-teachhq">BespokeLMS &middot; Platform</p>
-                <h1 class="mt-1 text-lg font-black text-slatecard">Platform administration</h1>
-                <p class="mt-2 text-caption text-ink-soft">
-                    {{ $user->displayName() }} ({{ $user->roleLabel() }})
-                </p>
-            </div>
-
             <!-- Platform Workspace -->
             <nav class="mb-6">
                 <div class="mb-2.5 text-xs font-bold uppercase tracking-wider text-teachhq">Platform Workspace</div>
@@ -89,13 +80,6 @@
                 </ul>
             </nav>
 
-            <!-- Back to dashboard -->
-            <div class="mt-6 border-t border-line pt-5">
-                <a href="{{ route('dashboard') }}"
-                   class="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-2 text-xs font-semibold text-slatecard transition hover:bg-paper focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-2">
-                    ← Back to dashboard
-                </a>
-            </div>
         </div>
     </aside>
 
@@ -103,21 +87,21 @@
     <main class="min-w-0 flex-1">
         <!-- Tenants -->
         <section id="tenants-content" class="content-section">
-            <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                <div class="min-w-0">
-                    <h2 class="text-2xl font-black text-slatecard">Tenants</h2>
-                    <p class="mt-2 text-sm text-ink-soft">Every operator and client organisation across the estate. Select a tenant to configure its white-label instance.</p>
+            <div class="mb-6">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <h1 class="text-2xl font-black text-slatecard">Tenants</h1>
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center lg:flex-none">
+                        @if (! empty($tenants))
+                            <x-tenant-selector :tenants="$tenants" label="Configure a tenant" />
+                        @endif
+                        <button type="button" disabled
+                                class="inline-flex items-center justify-center gap-1.5 rounded-control bg-button-primary px-4 py-2 text-sm font-semibold text-button-primary-text opacity-60 focus:outline-none focus:ring-2 focus:ring-button-primary focus:ring-offset-2">
+                            <svg class="h-icon w-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+                            Create Tenant <span class="text-micro font-normal opacity-80">(coming soon)</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="flex flex-col gap-3 sm:flex-row sm:items-center lg:flex-none">
-                    @if (! empty($tenants))
-                        <x-tenant-selector :tenants="$tenants" label="Configure a tenant" />
-                    @endif
-                    <button type="button" disabled
-                            class="inline-flex items-center justify-center gap-1.5 rounded-control bg-teachhq px-4 py-2 text-sm font-semibold text-on-brand opacity-60 focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-2">
-                        <svg class="h-icon w-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-                        Create Tenant <span class="text-micro font-normal opacity-80">(coming soon)</span>
-                    </button>
-                </div>
+                <p class="mt-2 max-w-3xl text-sm text-ink-soft">Every operator and client organisation across the estate. Select a tenant to configure its white-label instance.</p>
             </div>
 
             @unless ($estateError)
@@ -145,7 +129,7 @@
                     ['key' => 'name', 'label' => 'Tenant', 'type' => 'text'],
                     ['key' => 'type', 'label' => 'Type', 'type' => 'text'],
                     ['key' => 'model', 'label' => 'Model', 'type' => 'text', 'hide' => 'sm'],
-                    ['key' => 'parent', 'label' => 'Parent', 'type' => 'text', 'hide' => 'md'],
+                    ['key' => 'parent', 'label' => 'Parent or Served By', 'type' => 'text', 'hide' => 'md'],
                     ['key' => 'users', 'label' => 'Users', 'type' => 'num', 'align' => 'end'],
                     ['key' => 'clients', 'label' => 'Clients', 'type' => 'num', 'align' => 'end', 'hide' => 'lg'],
                     ['key' => 'added', 'label' => 'Added', 'type' => 'date', 'hide' => 'lg'],
@@ -159,9 +143,15 @@
                     ['key' => 'model', 'label' => 'Model', 'options' => $modelOptions ?? []],
                 ];
 
+                $bulkActions = [
+                    ['label' => 'Export', 'disabled' => true, 'note' => 'soon'],
+                    ['label' => 'Archive', 'disabled' => true, 'note' => 'soon'],
+                ];
+
                 $tenantRows = [];
                 foreach ($tenants ?? [] as $t) {
                     $tenantRows[] = [
+                        'id' => $t['id'],
                         'href' => route('platform.tenants.show', $t['id']),
                         'search' => implode(' ', array_filter([
                             $t['name'], $t['slug'], $t['type_label'], $t['model_label'],
@@ -177,6 +167,10 @@
                             'clients' => ['type' => 'strong', 'value' => $t['type'] === 'operator' ? $t['client_count'] : '—', 'sort' => $t['client_count']],
                             'added' => ['type' => 'muted', 'value' => $t['created_label'], 'sort' => $t['created_sort']],
                         ],
+                        'actions' => [
+                            ['label' => 'Configure tenant', 'href' => route('platform.tenants.show', $t['id'])],
+                            ['label' => 'View as tenant', 'disabled' => true, 'note' => 'soon'],
+                        ],
                     ];
                 }
             @endphp
@@ -189,6 +183,10 @@
                 :search="$q ?? ''"
                 search-placeholder="Search tenants by name, slug or location"
                 count-noun="tenant"
+                selectable
+                :bulk-actions="$bulkActions"
+                :row-actions="true"
+                :per-page="25"
                 :error="$estateError"
                 empty="No tenant organisations found yet." />
         </section>

@@ -1,24 +1,30 @@
 {{--
- | Reusable data table — the single, consistent table UI/UX for the whole
- | platform. Fully data-driven: pass :columns and :rows and it renders the
- | toolbar (search + filter selects + live count), a responsive sortable table,
- | clickable rows, and empty / error states. Styling is 100% design-token
- | classes (no hardcoded values), so tenant brand kits reskin it automatically.
+ | Reusable data table + shell — the single, consistent table UI/UX for the
+ | whole platform. Every table uses this component; only the column/field
+ | definitions and the per-row data vary. It provides, as standard:
+ |   • toolbar: search + filter selects + live filtered count
+ |   • responsive, sortable columns (cells never wrap — overflow scrolls)
+ |   • clickable rows (primary cell is a real link for no-JS / keyboard)
+ |   • multi-select checkboxes + a bulk-action bar
+ |   • a three-dot row-actions menu
+ |   • client-side pagination
+ |   • empty / error states
+ | Styling is 100% design-token classes so tenant brand kits reskin it. The
+ | behaviour script is emitted once per response regardless of table count.
  |
- | Behaviour (search, filter, column sort, row navigation) is progressive
- | enhancement: the table is fully readable and each row is reachable via its
- | primary-cell link without JavaScript. The behaviour script is emitted once
- | per response no matter how many tables a page contains.
- |
- | @param string       $id       Unique instance id.
- | @param array        $columns  [ ['key','label','sortable'=>true,'type'=>'text|num|date','align'=>'start|end','hide'=>null|'sm'|'md'|'lg'] ]
- | @param array        $rows     [ ['href'=>?,'search'=>'','filters'=>['k'=>'v'],'cells'=>['colkey'=>scalar|['type'=>'badge|text|muted|strong|stack','value'=>...,'sub'=>...,'tone'=>...,'sort'=>...]]] ]
- | @param array        $filters  Toolbar selects: [ ['key','label','options'=>[['value','label']]] ]
- | @param bool|string  $search   Enable search; a string sets the initial query.
+ | @param string       $id
+ | @param array        $columns   [ ['key','label','sortable'=>true,'type'=>'text|num|date','align'=>'start|end','hide'=>null|'sm'|'md'|'lg'] ]
+ | @param array        $rows      [ ['id'=>?,'href'=>?,'search'=>'','filters'=>[k=>v],'cells'=>[colkey=>scalar|['type'=>'badge|text|muted|strong|stack','value'=>...,'sub'=>...,'tone'=>...,'sort'=>...]],'actions'=>[['label','href'?,'disabled'?,'danger'?,'note'?]]] ]
+ | @param array        $filters
+ | @param bool|string  $search
  | @param string       $searchPlaceholder
  | @param string       $countNoun / $countNounPlural
- | @param string       $empty    Text when there are no rows at all.
- | @param string|null  $error    When set, an error panel is shown instead of the table.
+ | @param string       $empty
+ | @param string|null  $error
+ | @param bool         $selectable   Leading checkbox column + bulk-action bar.
+ | @param array        $bulkActions  [ ['label','key'?,'disabled'?,'danger'?,'note'?] ]
+ | @param bool         $rowActions   Trailing three-dot actions menu column.
+ | @param int          $perPage      Client-side page size (0 = no pagination).
 --}}
 @props([
     'id',
@@ -31,6 +37,10 @@
     'countNounPlural' => null,
     'empty' => 'Nothing to show yet.',
     'error' => null,
+    'selectable' => false,
+    'bulkActions' => [],
+    'rowActions' => false,
+    'perPage' => 25,
 ])
 
 @php
@@ -38,7 +48,6 @@
     $searchEnabled = $search !== false;
     $searchValue = is_string($search) ? $search : '';
 
-    // Pre-compute shared column classes so <th> and <td> always match.
     $colClass = [];
     foreach ($columns as $i => $col) {
         $align = ($col['align'] ?? 'start') === 'end' ? 'text-right' : 'text-left';
@@ -61,20 +70,45 @@
     ];
 @endphp
 
-<div class="dt" data-datatable data-count-noun="{{ $countNoun }}" data-count-noun-plural="{{ $nounPlural }}">
+<div class="dt" data-datatable data-count-noun="{{ $countNoun }}" data-count-noun-plural="{{ $nounPlural }}" data-dt-perpage="{{ (int) $perPage }}">
     @if ($error)
-        <div role="alert"
-             class="flex items-start gap-3 rounded-panel border border-rag-red/40 bg-rag-red-soft p-4 text-sm text-rag-red">
+        <div role="alert" class="flex items-start gap-3 rounded-panel border border-rag-red/40 bg-rag-red-soft p-4 text-sm text-rag-red">
             <svg class="mt-0.5 h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
             <p>{{ $error }}</p>
         </div>
     @else
+        @if ($selectable)
+            <div data-dt-bulkbar class="mb-3 hidden flex-col gap-3 rounded-panel border border-teachhq/30 bg-teachhq-soft px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-sm font-semibold text-teachhq-dark"><span data-dt-bulkcount>0</span> selected</span>
+                    <button type="button" data-dt-clear class="text-mini font-semibold text-ink-soft underline-offset-2 transition hover:text-slatecard hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Clear</button>
+                </div>
+                @if (! empty($bulkActions))
+                    <div class="flex flex-wrap items-center gap-2">
+                        @foreach ($bulkActions as $ba)
+                            @if (! empty($ba['disabled']))
+                                <button type="button" disabled
+                                        class="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-1.5 text-mini font-semibold text-ink-soft opacity-70">
+                                    {{ $ba['label'] }}@isset($ba['note']) <span class="font-normal">({{ $ba['note'] }})</span>@endisset
+                                </button>
+                            @else
+                                <button type="button" data-dt-bulk="{{ $ba['key'] ?? $ba['label'] }}"
+                                        class="inline-flex items-center gap-1.5 rounded-control px-3 py-1.5 text-mini font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq focus-visible:ring-offset-1 {{ ! empty($ba['danger']) ? 'border border-rag-red/40 bg-surface text-rag-red hover:bg-rag-red-soft' : 'bg-button-primary text-button-primary-text hover:bg-button-primary-hover' }}">
+                                    {{ $ba['label'] }}
+                                </button>
+                            @endif
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        @endif
+
         {{-- Toolbar --}}
         <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             @if ($searchEnabled)
                 <div class="relative min-w-0 flex-1 sm:max-w-xs">
                     <label for="{{ $id }}-search" class="sr-only">{{ $searchPlaceholder }}</label>
-                    <svg class="pointer-events-none absolute left-3 top-1/2 h-icon w-icon -translate-y-1/2 text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                    <svg class="pointer-events-none absolute left-3 top-1/2 -mt-2 h-icon w-icon text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                     <input id="{{ $id }}-search" type="search" data-dt-search value="{{ $searchValue }}"
                            placeholder="{{ $searchPlaceholder }}" autocomplete="off"
                            class="w-full rounded-control border border-line bg-surface py-2 pl-9 pr-3 text-sm text-slatecard placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-teachhq">
@@ -82,15 +116,16 @@
             @endif
 
             @foreach ($filters as $filter)
-                <div class="min-w-0">
+                <div class="relative min-w-0">
                     <label for="{{ $id }}-f-{{ $filter['key'] }}" class="sr-only">{{ $filter['label'] }}</label>
                     <select id="{{ $id }}-f-{{ $filter['key'] }}" data-dt-filter="{{ $filter['key'] }}"
-                            class="w-full rounded-control border border-line bg-surface py-2 pl-3 pr-8 text-sm font-medium text-slatecard focus:outline-none focus:ring-2 focus:ring-teachhq">
+                            class="w-full appearance-none rounded-control border border-line bg-surface py-2 pl-3 pr-10 text-sm font-medium text-slatecard focus:outline-none focus:ring-2 focus:ring-teachhq">
                         <option value="">{{ $filter['label'] }}: All</option>
                         @foreach ($filter['options'] as $opt)
                             <option value="{{ $opt['value'] }}">{{ $opt['label'] }}</option>
                         @endforeach
                     </select>
+                    <svg class="select-chevron pointer-events-none absolute right-3 top-1/2 -mt-2 h-4 w-4 text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </div>
             @endforeach
 
@@ -109,10 +144,16 @@
                     <caption class="sr-only">{{ $countNoun }} list</caption>
                     <thead>
                         <tr class="bg-paper">
+                            @if ($selectable)
+                                <th scope="col" class="w-px whitespace-nowrap px-3 py-3">
+                                    <input type="checkbox" data-dt-selectall aria-label="Select all rows on this page"
+                                           class="h-4 w-4 rounded border-line text-teachhq focus:ring-teachhq">
+                                </th>
+                            @endif
                             @foreach ($columns as $i => $col)
                                 @php $sortable = $col['sortable'] ?? true; @endphp
                                 <th scope="col"
-                                    class="{{ $colClass[$i] }} px-4 py-3 text-mini font-bold uppercase tracking-wide text-ink-soft"
+                                    class="{{ $colClass[$i] }} whitespace-nowrap px-4 py-3 text-mini font-bold uppercase tracking-wide text-ink-soft"
                                     @if ($sortable) data-dt-col="{{ $col['key'] }}" data-dt-type="{{ $col['type'] ?? 'text' }}" aria-sort="none" @endif>
                                     @if ($sortable)
                                         <button type="button" data-dt-sort="{{ $col['key'] }}"
@@ -125,28 +166,35 @@
                                     @endif
                                 </th>
                             @endforeach
+                            @if ($rowActions)
+                                <th scope="col" class="w-px px-2"><span class="sr-only">Actions</span></th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody data-dt-body>
                         @foreach ($rows as $row)
                             @php
                                 $href = $row['href'] ?? null;
+                                $rowId = $row['id'] ?? $loop->index;
                                 $sortAttrs = [];
                                 foreach ($columns as $col) {
                                     $cell = $row['cells'][$col['key']] ?? '';
-                                    if (is_array($cell)) {
-                                        $sv = $cell['sort'] ?? ($cell['value'] ?? '');
-                                    } else {
-                                        $sv = $cell;
-                                    }
+                                    $sv = is_array($cell) ? ($cell['sort'] ?? ($cell['value'] ?? '')) : $cell;
                                     $sortAttrs[$col['key']] = is_scalar($sv) ? (string) $sv : '';
                                 }
+                                $acts = $row['actions'] ?? [];
                             @endphp
                             <tr class="dt-row border-t border-line align-middle {{ $href ? 'cursor-pointer transition hover:bg-paper focus-within:bg-paper' : '' }}"
                                 data-search="{{ \Illuminate\Support\Str::lower((string) ($row['search'] ?? '')) }}"
                                 @if ($href) data-href="{{ $href }}" @endif
                                 @foreach (($row['filters'] ?? []) as $fk => $fv) data-filter-{{ $fk }}="{{ $fv }}" @endforeach
                                 @foreach ($sortAttrs as $sk => $sv) data-sort-{{ $sk }}="{{ $sv }}" @endforeach>
+                                @if ($selectable)
+                                    <td class="w-px whitespace-nowrap px-3 py-3" data-dt-nonav>
+                                        <input type="checkbox" data-dt-select value="{{ $rowId }}" aria-label="Select row"
+                                               class="h-4 w-4 rounded border-line text-teachhq focus:ring-teachhq">
+                                    </td>
+                                @endif
                                 @foreach ($columns as $i => $col)
                                     @php
                                         $cell = $row['cells'][$col['key']] ?? '';
@@ -156,7 +204,7 @@
                                         }
                                         $type = $cell['type'] ?? 'text';
                                     @endphp
-                                    <td class="{{ $colClass[$i] }} px-4 py-3 text-sm text-slatecard">
+                                    <td class="{{ $colClass[$i] }} whitespace-nowrap px-4 py-3 text-sm text-slatecard">
                                         @if ($isPrimary && $href)
                                             <a href="{{ $href }}"
                                                class="group inline-flex flex-col rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">
@@ -185,11 +233,56 @@
                                         @endif
                                     </td>
                                 @endforeach
+                                @if ($rowActions)
+                                    <td class="w-px px-2 py-3 text-right" data-dt-nonav>
+                                        @if (! empty($acts))
+                                            <div class="relative inline-block text-left">
+                                                <button type="button" data-dt-actions-toggle aria-haspopup="menu" aria-expanded="false"
+                                                        class="inline-flex h-8 w-8 items-center justify-center rounded-control text-ink-faint transition hover:bg-line hover:text-slatecard focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">
+                                                    <span class="sr-only">Row actions</span>
+                                                    <svg class="h-icon w-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg>
+                                                </button>
+                                                <div data-dt-actions-menu role="menu" class="fixed z-50 hidden w-48 rounded-panel border border-line bg-surface p-1 shadow-panel">
+                                                    @foreach ($acts as $act)
+                                                        @if (! empty($act['disabled']))
+                                                            <span class="flex cursor-not-allowed items-center gap-2 rounded-lg px-2.5 py-2 text-sm text-ink-faint" aria-disabled="true">
+                                                                {{ $act['label'] }}@isset($act['note']) <span class="text-micro">({{ $act['note'] }})</span>@endisset
+                                                            </span>
+                                                        @else
+                                                            <a href="{{ $act['href'] ?? '#' }}" role="menuitem"
+                                                               class="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq {{ ! empty($act['danger']) ? 'text-rag-red hover:bg-rag-red-soft' : 'text-slatecard hover:bg-paper' }}">
+                                                                {{ $act['label'] }}
+                                                            </a>
+                                                        @endif
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        @endif
+                                    </td>
+                                @endif
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
             </div>
+
+            {{-- Pagination --}}
+            <nav data-dt-pager class="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between" aria-label="Pagination">
+                <p class="text-mini text-ink-soft" data-dt-range aria-live="polite"></p>
+                <div class="flex items-center gap-1">
+                    <button type="button" data-dt-prev
+                            class="inline-flex h-8 items-center gap-1 rounded-control border border-line bg-surface px-3 text-mini font-semibold text-slatecard transition hover:bg-paper focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq disabled:pointer-events-none disabled:opacity-40">
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+                        Prev
+                    </button>
+                    <span class="px-2 text-mini font-medium text-ink-soft" data-dt-pageinfo></span>
+                    <button type="button" data-dt-next
+                            class="inline-flex h-8 items-center gap-1 rounded-control border border-line bg-surface px-3 text-mini font-semibold text-slatecard transition hover:bg-paper focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq disabled:pointer-events-none disabled:opacity-40">
+                        Next
+                        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    </button>
+                </div>
+            </nav>
 
             <div data-dt-empty class="mt-3 hidden rounded-panel border border-dashed border-line bg-surface p-6 text-center text-sm text-ink-soft">
                 No {{ $nounPlural }} match your search and filters.
@@ -211,15 +304,22 @@
             var countEl = root.querySelector('[data-dt-count]');
             var emptyEl = root.querySelector('[data-dt-empty]');
             var sortButtons = Array.prototype.slice.call(root.querySelectorAll('[data-dt-sort]'));
+            var pagerEl = root.querySelector('[data-dt-pager]');
+            var rangeEl = root.querySelector('[data-dt-range]');
+            var pageInfoEl = root.querySelector('[data-dt-pageinfo]');
+            var prevBtn = root.querySelector('[data-dt-prev]');
+            var nextBtn = root.querySelector('[data-dt-next]');
             var nounS = root.getAttribute('data-count-noun') || 'row';
             var nounP = root.getAttribute('data-count-noun-plural') || (nounS + 's');
+            var perPage = parseInt(root.getAttribute('data-dt-perpage'), 10) || 0;
             var total = rows.length;
-            var sortKey = null, sortDir = 1;
+            var sortKey = null, sortDir = 1, page = 1;
 
             function typeFor(key) {
                 var th = root.querySelector('[data-dt-col="' + key + '"]');
                 return th ? (th.getAttribute('data-dt-type') || 'text') : 'text';
             }
+            function isVisible(row) { return row && !row.classList.contains('hidden'); }
 
             function matches(row) {
                 if (searchInput && searchInput.value.trim()) {
@@ -236,35 +336,45 @@
             }
 
             function apply() {
-                var visible = rows.filter(matches);
+                var filtered = rows.filter(matches);
                 if (sortKey) {
                     var type = typeFor(sortKey);
-                    visible.sort(function (a, b) {
+                    filtered.sort(function (a, b) {
                         var av = a.getAttribute('data-sort-' + sortKey) || '';
                         var bv = b.getAttribute('data-sort-' + sortKey) || '';
                         var cmp;
-                        if (type === 'num') {
-                            cmp = (parseFloat(av) || 0) - (parseFloat(bv) || 0);
-                        } else if (type === 'date') {
-                            cmp = (av < bv ? -1 : (av > bv ? 1 : 0));
-                        } else {
-                            cmp = av.localeCompare(bv, undefined, { sensitivity: 'base', numeric: true });
-                        }
+                        if (type === 'num') { cmp = (parseFloat(av) || 0) - (parseFloat(bv) || 0); }
+                        else if (type === 'date') { cmp = (av < bv ? -1 : (av > bv ? 1 : 0)); }
+                        else { cmp = av.localeCompare(bv, undefined, { sensitivity: 'base', numeric: true }); }
                         return cmp * sortDir;
                     });
                 }
+
+                var pageCount = perPage > 0 ? Math.max(1, Math.ceil(filtered.length / perPage)) : 1;
+                if (page > pageCount) page = pageCount;
+                if (page < 1) page = 1;
+                var start = perPage > 0 ? (page - 1) * perPage : 0;
+                var end = perPage > 0 ? Math.min(start + perPage, filtered.length) : filtered.length;
+                var pageRows = filtered.slice(start, end);
+
                 rows.forEach(function (r) { r.classList.add('hidden'); });
-                visible.forEach(function (r) { r.classList.remove('hidden'); body.appendChild(r); });
-                if (countEl) {
-                    countEl.textContent = 'Showing ' + visible.length + ' of ' + total + ' ' + (total === 1 ? nounS : nounP);
-                }
-                if (emptyEl) { emptyEl.classList.toggle('hidden', visible.length !== 0); }
+                pageRows.forEach(function (r) { r.classList.remove('hidden'); body.appendChild(r); });
+
+                if (countEl) { countEl.textContent = filtered.length + ' of ' + total + ' ' + (total === 1 ? nounS : nounP); }
+                if (emptyEl) { emptyEl.classList.toggle('hidden', filtered.length !== 0); }
+                if (rangeEl) { rangeEl.textContent = filtered.length ? ('Showing ' + (start + 1) + '–' + end + ' of ' + filtered.length) : ''; }
+                if (pageInfoEl) { pageInfoEl.textContent = 'Page ' + page + ' of ' + pageCount; }
+                if (prevBtn) prevBtn.disabled = page <= 1;
+                if (nextBtn) nextBtn.disabled = page >= pageCount;
+                if (pagerEl) pagerEl.classList.toggle('hidden', filtered.length === 0);
+                syncSelectAll();
             }
 
             sortButtons.forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     var key = btn.getAttribute('data-dt-sort');
                     if (sortKey === key) { sortDir = -sortDir; } else { sortKey = key; sortDir = 1; }
+                    page = 1;
                     root.querySelectorAll('[data-dt-col]').forEach(function (th) {
                         var active = th.getAttribute('data-dt-col') === key;
                         th.setAttribute('aria-sort', active ? (sortDir === 1 ? 'ascending' : 'descending') : 'none');
@@ -275,16 +385,92 @@
                 });
             });
 
-            if (searchInput) searchInput.addEventListener('input', apply);
-            filters.forEach(function (s) { s.addEventListener('change', apply); });
+            if (searchInput) searchInput.addEventListener('input', function () { page = 1; apply(); });
+            filters.forEach(function (s) { s.addEventListener('change', function () { page = 1; apply(); }); });
+            if (prevBtn) prevBtn.addEventListener('click', function () { if (page > 1) { page--; apply(); } });
+            if (nextBtn) nextBtn.addEventListener('click', function () { page++; apply(); });
 
+            /* Row navigation (ignore controls and no-nav cells). */
             body.addEventListener('click', function (e) {
-                if (e.target.closest('a, button, input, select, label')) return;
+                if (e.target.closest('a, button, input, select, label, [data-dt-nonav]')) return;
                 var row = e.target.closest('.dt-row');
                 if (!row || !row.getAttribute('data-href')) return;
                 if (window.getSelection && String(window.getSelection())) return;
                 window.location.href = row.getAttribute('data-href');
             });
+
+            /* Selection + bulk bar. */
+            var selectAll = root.querySelector('[data-dt-selectall]');
+            var bulkBar = root.querySelector('[data-dt-bulkbar]');
+            var bulkCount = root.querySelector('[data-dt-bulkcount]');
+            var clearBtn = root.querySelector('[data-dt-clear]');
+            function rowChecks() { return Array.prototype.slice.call(body.querySelectorAll('[data-dt-select]')); }
+            function checkedRows() { return rowChecks().filter(function (c) { return c.checked; }); }
+            function paintRow(check) {
+                var tr = check.closest('.dt-row');
+                if (tr) tr.classList.toggle('bg-teachhq-soft', check.checked);
+            }
+            function syncBulk() {
+                var n = checkedRows().length;
+                if (bulkCount) bulkCount.textContent = n;
+                if (bulkBar) bulkBar.classList.toggle('hidden', n === 0);
+            }
+            function syncSelectAll() {
+                if (!selectAll) return;
+                var vis = rowChecks().filter(function (c) { return isVisible(c.closest('.dt-row')); });
+                var on = vis.filter(function (c) { return c.checked; }).length;
+                selectAll.checked = vis.length > 0 && on === vis.length;
+                selectAll.indeterminate = on > 0 && on < vis.length;
+            }
+            if (selectAll) {
+                selectAll.addEventListener('change', function () {
+                    rowChecks().forEach(function (c) {
+                        if (isVisible(c.closest('.dt-row'))) { c.checked = selectAll.checked; paintRow(c); }
+                    });
+                    syncBulk();
+                });
+            }
+            rowChecks().forEach(function (c) {
+                c.addEventListener('change', function () { paintRow(c); syncBulk(); syncSelectAll(); });
+            });
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function () {
+                    rowChecks().forEach(function (c) { c.checked = false; paintRow(c); });
+                    syncBulk(); syncSelectAll();
+                });
+            }
+
+            /* Row-actions dropdown (fixed-positioned to escape the scroll clip). */
+            var openMenu = null;
+            function closeMenu() {
+                if (openMenu) { openMenu.menu.classList.add('hidden'); openMenu.btn.setAttribute('aria-expanded', 'false'); openMenu = null; }
+            }
+            root.querySelectorAll('[data-dt-actions-toggle]').forEach(function (btn) {
+                var menu = btn.parentNode.querySelector('[data-dt-actions-menu]');
+                if (!menu) return;
+                btn.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var wasOpen = openMenu && openMenu.menu === menu;
+                    closeMenu();
+                    if (wasOpen) return;
+                    menu.classList.remove('hidden');
+                    var r = btn.getBoundingClientRect();
+                    var mw = menu.offsetWidth, mh = menu.offsetHeight;
+                    var left = Math.max(8, r.right - mw);
+                    var top = r.bottom + 4;
+                    if (top + mh > window.innerHeight - 8) { top = Math.max(8, r.top - mh - 4); }
+                    menu.style.left = left + 'px';
+                    menu.style.top = top + 'px';
+                    btn.setAttribute('aria-expanded', 'true');
+                    openMenu = { menu: menu, btn: btn };
+                });
+            });
+            document.addEventListener('click', function (e) {
+                if (openMenu && !openMenu.menu.contains(e.target) && !openMenu.btn.contains(e.target)) closeMenu();
+            });
+            document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
+            window.addEventListener('scroll', function () { closeMenu(); }, true);
+            window.addEventListener('resize', function () { closeMenu(); });
 
             apply();
         }

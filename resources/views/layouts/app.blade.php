@@ -68,7 +68,7 @@
                         <span class="block truncate text-sm font-semibold text-slatecard">{{ $hdrUser?->displayName() ?? 'Account' }}</span>
                         <span class="block truncate text-mini text-ink-soft">{{ $hdrUser?->roleLabel() }}</span>
                     </span>
-                    <svg class="h-4 w-4 flex-none text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    <svg class="select-chevron h-4 w-4 flex-none text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
                 </button>
 
                 <div role="menu" aria-label="Account menu" data-account-panel

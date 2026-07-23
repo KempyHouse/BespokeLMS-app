@@ -5,7 +5,7 @@
 @section('content')
 <div class="flex flex-col items-start gap-6 lg:flex-row lg:items-stretch lg:gap-8">
     <!-- Left rail -->
-    <aside class="w-full lg:w-rail lg:flex-none">
+    <aside class="w-full lg:w-rail lg:flex-none lg:sticky lg:top-24 lg:self-start">
         <x-workspace-switcher active="platform" />
 
         <div class="rounded-control bg-paper p-6">
@@ -192,7 +192,7 @@
                         </div>
                         <div class="mt-5 flex items-center gap-3">
                             <button type="submit"
-                                    class="inline-flex items-center gap-1.5 rounded-control bg-teachhq px-4 py-2 text-sm font-semibold text-on-brand transition hover:bg-teachhq-dark focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-2">
+                                    class="inline-flex items-center gap-1.5 rounded-control bg-button-primary px-4 py-2 text-sm font-semibold text-button-primary-text transition hover:bg-button-primary-hover focus:outline-none focus:ring-2 focus:ring-button-primary focus:ring-offset-2">
                                 Save brand kit
                             </button>
                             <span class="text-mini text-ink-soft">Saved values reskin this tenant immediately.</span>

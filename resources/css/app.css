@@ -27,6 +27,11 @@
     --color-paper: #f4f2ef;
     --color-slatecard: #3d515b;
 
+    /* Primary button (semantic; defaults to brand primary, tenant-themeable) */
+    --color-button-primary: #009de1;
+    --color-button-primary-hover: #007bb1;
+    --color-button-primary-text: #ffffff;
+
     /* Neutral / surface scale (light UI) */
     --color-surface: #ffffff;
     --color-on-brand: #ffffff;
@@ -73,6 +78,8 @@
     --duration-drawer: 480ms;  /* slide-in drawers + scrim */
     --duration-notif: 500ms;   /* notification row entrance */
     --duration-typing: 1s;     /* chat typing loop */
+    --duration-bounce: 520ms;  /* workspace pill bounce */
+    --duration-chevron: 200ms; /* dropdown chevron rotate */
     --ease-drawer: cubic-bezier(0.16, 1, 0.3, 1);
 
     /* Effects */
@@ -242,5 +249,49 @@
             transition-delay: 0ms !important;
         }
         .chat-typing i { animation: none !important; }
+    }
+}
+
+/*
+ |----------------------------------------------------------------------------
+ | Workspace pill switcher — one-shot spring "bounce" played on the active pill
+ | when a workspace page loads. Token-driven duration/easing; disabled under
+ | reduced-motion.
+ |----------------------------------------------------------------------------
+ */
+@layer components {
+    @keyframes wsBounce {
+        0%   { transform: scale(0.82); }
+        45%  { transform: scale(1.08); }
+        70%  { transform: scale(0.97); }
+        100% { transform: scale(1); }
+    }
+    .ws-bounce {
+        animation: wsBounce var(--duration-bounce) var(--ease-drawer) 1;
+        transform-origin: center;
+        will-change: transform;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .ws-bounce { animation: none !important; }
+    }
+}
+
+/*
+ |----------------------------------------------------------------------------
+ | Dropdown chevrons — rotate 180° while the control is open. Native <select>
+ | uses :focus as the open approximation (the chevron is the sibling directly
+ | after the select); button/menu dropdowns rotate on aria-expanded. Duration
+ | is token-driven; disabled under reduced-motion by the global rule above.
+ |----------------------------------------------------------------------------
+ */
+@layer components {
+    .select-chevron {
+        transition: transform var(--duration-chevron) var(--ease-drawer);
+    }
+    select:focus ~ .select-chevron {
+        transform: rotate(180deg);
+    }
+    [aria-expanded='true'] .select-chevron {
+        transform: rotate(180deg);
     }
 }

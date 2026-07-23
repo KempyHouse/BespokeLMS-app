@@ -22,7 +22,7 @@
 <div class="relative">
     <label for="{{ $id }}" class="sr-only">{{ $label }}</label>
     <select id="{{ $id }}" data-tenant-selector
-            class="w-full rounded-control border border-line bg-surface py-2 pl-3 pr-9 text-sm font-medium text-slatecard focus:outline-none focus:ring-2 focus:ring-teachhq sm:w-64">
+            class="w-full appearance-none rounded-control border border-line bg-surface py-2 pl-3 pr-10 text-sm font-medium text-slatecard focus:outline-none focus:ring-2 focus:ring-teachhq sm:w-64">
         <option value="">{{ $label }}…</option>
         @foreach ($tenants as $t)
             <option value="{{ route('platform.tenants.show', $t['id']) }}" @selected($current === $t['id'])>
@@ -30,7 +30,7 @@
             </option>
         @endforeach
     </select>
-    <svg class="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+    <svg class="select-chevron pointer-events-none absolute right-3 top-1/2 -mt-2 h-4 w-4 text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
 </div>
 
 @once
