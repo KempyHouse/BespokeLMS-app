@@ -31,6 +31,7 @@
                             ['id' => 'users', 'label' => 'Users & roles'],
                             ['id' => 'courses', 'label' => 'Courses'],
                             ['id' => 'ai', 'label' => 'AI & integrations'],
+                            ['id' => 'email', 'label' => 'Email sender'],
                         ];
                     @endphp
                     @foreach ($sections as $s)
@@ -75,6 +76,12 @@
             <div role="alert" class="mb-5 flex items-start gap-3 rounded-panel border border-rag-red/40 bg-rag-red-soft p-4 text-sm text-rag-red">
                 <svg class="mt-0.5 h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
                 <p>{{ session('brandingError') }}</p>
+            </div>
+        @endif
+        @if (session('aliasError'))
+            <div role="alert" class="mb-5 flex items-start gap-3 rounded-panel border border-rag-red/40 bg-rag-red-soft p-4 text-sm text-rag-red">
+                <svg class="mt-0.5 h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>
+                <p>{{ session('aliasError') }}</p>
             </div>
         @endif
 
@@ -351,6 +358,82 @@
                     Open AI &amp; voice providers
                     <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
                 </a>
+            </section>
+
+            <!-- Email sender identity (alias) -->
+            <section id="email" class="scroll-mt-24 rounded-panel border border-line bg-surface p-6 shadow-panel">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="min-w-0">
+                        <h2 class="text-lg font-black text-slatecard">Email sender</h2>
+                        <p class="mt-1 text-caption text-ink-soft">This tenant sends on the platform's email transport, but as its own identity. The provider itself is set once, platform-wide.</p>
+                    </div>
+                    @if ($emailAlias !== null && $emailAlias['is_active'])
+                        <span class="inline-flex flex-none items-center rounded-full px-2.5 py-0.5 text-micro font-bold {{ $emailAlias['is_verified'] ? 'bg-rag-green-soft text-rag-green' : 'bg-line-soft text-ink-soft' }}">
+                            {{ $emailAlias['is_verified'] ? 'Active · verified' : 'Active · unverified' }}
+                        </span>
+                    @endif
+                </div>
+
+                @if ($emailAlias === null)
+                    <div class="mt-5 rounded-control border border-dashed border-line bg-paper p-5 text-sm text-ink-soft">
+                        The email alias could not be loaded right now. Please try again shortly.
+                    </div>
+                @else
+                    @if ($errors->any())
+                        <div role="alert" class="mt-5 rounded-panel border border-rag-red/40 bg-rag-red-soft p-3 text-sm text-rag-red">
+                            Some values were not valid. Please check the highlighted fields and try again.
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('platform.tenants.alias.update', $tenant['id']) }}" class="mt-5">
+                        @csrf
+                        @method('PUT')
+
+                        <label class="flex items-center gap-2.5 text-sm font-medium text-slatecard">
+                            <input type="checkbox" name="is_active" value="1" @checked($emailAlias['is_active'])
+                                   class="h-4 w-4 rounded border-line text-teachhq focus:ring-teachhq">
+                            Send as this identity instead of the platform default
+                        </label>
+
+                        <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div>
+                                <label for="alias-from-name" class="block text-sm font-semibold text-slatecard">"From" name</label>
+                                <input type="text" id="alias-from-name" name="from_name" autocomplete="off"
+                                       value="{{ old('from_name', $emailAlias['from_name']) }}" placeholder="{{ $tenant['name'] }}"
+                                       class="mt-1.5 w-full rounded-control border border-line bg-paper px-3 py-2 text-sm text-slatecard placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-button-primary">
+                            </div>
+                            <div>
+                                <label for="alias-from-address" class="block text-sm font-semibold text-slatecard">"From" address</label>
+                                <input type="email" id="alias-from-address" name="from_address" autocomplete="off"
+                                       value="{{ old('from_address', $emailAlias['from_address']) }}" placeholder="no-reply@{{ $tenant['slug'] ?: 'tenant' }}.example"
+                                       class="mt-1.5 w-full rounded-control border border-line bg-paper px-3 py-2 text-sm text-slatecard placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-button-primary">
+                            </div>
+                        </div>
+                        <div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                            <div>
+                                <label for="alias-reply-to" class="block text-sm font-semibold text-slatecard">Reply-to <span class="font-normal text-ink-faint">(optional)</span></label>
+                                <input type="email" id="alias-reply-to" name="reply_to" autocomplete="off"
+                                       value="{{ old('reply_to', $emailAlias['reply_to']) }}" placeholder="support@{{ $tenant['slug'] ?: 'tenant' }}.example"
+                                       class="mt-1.5 w-full rounded-control border border-line bg-paper px-3 py-2 text-sm text-slatecard placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-button-primary">
+                            </div>
+                            <div>
+                                <label for="alias-domain" class="block text-sm font-semibold text-slatecard">Sending domain <span class="font-normal text-ink-faint">(optional)</span></label>
+                                <input type="text" id="alias-domain" name="sending_domain" autocomplete="off"
+                                       value="{{ old('sending_domain', $emailAlias['sending_domain']) }}" placeholder="mail.{{ $tenant['slug'] ?: 'tenant' }}.example"
+                                       class="mt-1.5 w-full rounded-control border border-line bg-paper px-3 py-2 text-sm text-slatecard placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-button-primary">
+                            </div>
+                        </div>
+
+                        <p class="mt-3 text-micro text-ink-faint">Domain verification (SPF/DKIM) is confirmed with the provider before an address is trusted. Saving asks you to confirm your password first.</p>
+
+                        <div class="mt-5 flex items-center justify-end">
+                            <button type="submit"
+                                    class="inline-flex items-center gap-1.5 rounded-control bg-button-primary px-4 py-2 text-sm font-semibold text-button-primary-text transition hover:bg-button-primary-hover focus:outline-none focus:ring-2 focus:ring-button-primary focus:ring-offset-2">
+                                Save email sender
+                            </button>
+                        </div>
+                    </form>
+                @endif
             </section>
         </div>
     </main>

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use App\Http\Controllers\AiIntegrationController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Http\Controllers\Auth\ConfirmPasswordController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseLibraryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailIntegrationController;
 use App\Http\Controllers\MyWorkspaceController;
@@ -49,6 +51,9 @@ Route::middleware('auth')->group(function (): void {
     // frozen prototype. Any authenticated user may load the shell; Supabase
     // RLS governs whatever tenant data the pages eventually read.
     Route::get('my', MyWorkspaceController::class)->name('my.home');
+    // Learner Course Library — the browsable catalogue on the My workspace.
+    Route::get('my/courses', [CourseLibraryController::class, 'index'])->name('my.courses');
+    Route::get('my/courses/{course}', [CourseLibraryController::class, 'show'])->name('my.courses.show');
     Route::get('team', TeamWorkspaceController::class)->name('team.home');
 
     // Per-user theme preference (light / dark / system). Applied on the client
@@ -65,13 +70,18 @@ Route::middleware('auth')->group(function (): void {
     | Platform-owner-only area. The "platform.owner" middleware returns 404 to
     | anyone who is not the BespokeLMS platform owner, so the area is neither
     | reachable nor disclosed to tenant users. Database access is independently
-    | enforced by Supabase RLS (is_platform_owner()).
+    | enforced by Supabase RLS (is_platform_owner()). Sensitive writes below add
+    | "platform.sudo" — a recent password re-confirmation (step-up auth).
     */
     Route::middleware('platform.owner')
         ->prefix('platform')
         ->name('platform.')
         ->group(function (): void {
             Route::get('/', [PlatformController::class, 'index'])->name('home');
+
+            // Step-up ("sudo mode") re-authentication screen for sensitive writes.
+            Route::get('confirm', [ConfirmPasswordController::class, 'create'])->name('confirm');
+            Route::post('confirm', [ConfirmPasswordController::class, 'store'])->name('confirm.store');
 
             // Global Courses console — the ecosystem-wide course catalogue
             // (platform-owned courses that cascade to tenants + operator courses).
@@ -85,17 +95,30 @@ Route::middleware('auth')->group(function (): void {
 
             // Save a tenant's brand kit (themeable design-token overrides).
             Route::put('tenants/{tenant}/branding', [PlatformController::class, 'updateBranding'])
+                ->middleware('platform.sudo')
                 ->name('tenants.branding.update');
+
+            // Save a tenant's email sender identity ("alias").
+            Route::put('tenants/{tenant}/email-alias', [PlatformController::class, 'updateAlias'])
+                ->middleware('platform.sudo')
+                ->name('tenants.alias.update');
 
             // Owner-level AI & voice provider integrations (Claude, OpenAI,
             // ElevenLabs, …), configured once and inherited by every tenant.
             Route::get('ai', [AiIntegrationController::class, 'index'])->name('ai');
-            Route::put('ai/{integration}', [AiIntegrationController::class, 'update'])->name('ai.update');
+            Route::put('ai/{integration}', [AiIntegrationController::class, 'update'])
+                ->middleware('platform.sudo')
+                ->name('ai.update');
 
             // Owner-level email transport (Resend, Postmark, SES, SMTP, …),
             // configured once here and inherited by every tenant. Per-tenant
             // sender identities ("aliases") are set on each tenant's console.
             Route::get('email', [EmailIntegrationController::class, 'index'])->name('email');
-            Route::put('email/{integration}', [EmailIntegrationController::class, 'update'])->name('email.update');
+            Route::put('email/{integration}', [EmailIntegrationController::class, 'update'])
+                ->middleware('platform.sudo')
+                ->name('email.update');
+            Route::post('email/test', [EmailIntegrationController::class, 'test'])
+                ->middleware('platform.sudo')
+                ->name('email.test');
         });
 });

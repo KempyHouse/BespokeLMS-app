@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Auth\SupabaseUser;
+use App\Support\Mail\TenantMailer;
 use App\Support\Supabase\Contracts\ReadsEmailIntegrations;
+use App\Support\Supabase\Contracts\WritesAuditLog;
 use App\Support\Supabase\Contracts\WritesEmailIntegrations;
 use App\Support\Supabase\Exceptions\SupabaseAuthException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 /**
@@ -20,12 +23,14 @@ use Illuminate\View\View;
  * NULL organization_id), and inherited by every tenant — the enabled row is the
  * platform transport, so swapping Resend for another provider is a matter of
  * enabling a different card. The area is owner-gated by the "platform.owner"
- * route middleware and independently by Supabase RLS.
+ * route middleware and independently by Supabase RLS; the sensitive writes are
+ * additionally protected by step-up re-auth ("platform.sudo").
  *
  * The API secret is encrypted with the application key (Laravel Crypt) before it
  * is persisted to `api_key_cipher`, and is never read back into the UI — the
  * page only ever knows whether a secret is set. Per-tenant sender identities
- * ("aliases") are configured separately, on each tenant's admin console.
+ * ("aliases") are configured separately, on each tenant's admin console. Every
+ * change is written to the audit trail.
  */
 final class EmailIntegrationController extends Controller
 {
@@ -55,11 +60,11 @@ final class EmailIntegrationController extends Controller
         ],
         'ses' => [
             'tagline' => 'Amazon SES — send from your own AWS account.',
-            'key_hint' => 'AWS secret access key',
-            'secret_label' => 'Secret access key',
+            'key_hint' => 'SMTP password',
+            'secret_label' => 'SMTP password',
             'needs_host' => false,
             'needs_region' => true,
-            'docs' => 'https://docs.aws.amazon.com/ses/',
+            'docs' => 'https://docs.aws.amazon.com/ses/latest/dg/smtp-credentials.html',
         ],
         'smtp' => [
             'tagline' => 'Any SMTP relay — host, port and credentials.',
@@ -71,8 +76,8 @@ final class EmailIntegrationController extends Controller
         ],
         'custom' => [
             'tagline' => 'A self-hosted or bespoke sending endpoint.',
-            'key_hint' => 'Bearer token',
-            'secret_label' => 'Secret / token',
+            'key_hint' => 'SMTP password / token',
+            'secret_label' => 'Secret / password',
             'needs_host' => true,
             'needs_region' => false,
             'docs' => null,
@@ -130,8 +135,12 @@ final class EmailIntegrationController extends Controller
         Request $request,
         ReadsEmailIntegrations $reads,
         WritesEmailIntegrations $writes,
+        WritesAuditLog $audit,
         string $integration
     ): RedirectResponse {
+        /** @var SupabaseUser $user */
+        $user = $request->user();
+
         // Confirm the id is an owner-level integration before writing.
         try {
             $rows = $reads->all();
@@ -196,12 +205,16 @@ final class EmailIntegrationController extends Controller
         // Secret handling: a submitted secret is encrypted server-side; an
         // explicit remove clears it; otherwise the stored secret is untouched.
         $hasKey = (bool) ($current['has_key'] ?? false);
+        $keyChanged = false;
+        $keyRemoved = false;
         if ($request->boolean('remove_key')) {
             $attrs['api_key_cipher'] = null;
             $hasKey = false;
+            $keyRemoved = true;
         } elseif (($validated['api_key'] ?? '') !== '') {
             $attrs['api_key_cipher'] = Crypt::encryptString((string) $validated['api_key']);
             $hasKey = true;
+            $keyChanged = true;
         }
 
         // Status reflects configuration: a transport needs a secret to be usable.
@@ -219,6 +232,44 @@ final class EmailIntegrationController extends Controller
             return redirect()->route('platform.email')->with('emailError', 'That integration could not be saved right now. Please try again shortly.');
         }
 
+        $audit->record(
+            action: 'email_integration.updated',
+            actorId: $user->profileId,
+            organizationId: $user->organizationId,
+            entity: 'email_integration',
+            entityId: $integration,
+            meta: [
+                'provider' => (string) ($current['provider'] ?? ''),
+                'is_enabled' => $attrs['is_enabled'],
+                'status' => $attrs['status'],
+                'key_changed' => $keyChanged,
+                'key_removed' => $keyRemoved,
+            ],
+        );
+
         return redirect()->route('platform.email')->with('status', trim((string) ($current['display_name'] ?? 'Integration')).' saved.');
+    }
+
+    /**
+     * Send a test message on the currently-enabled transport to the owner's own
+     * address, proving the configuration end to end.
+     */
+    public function test(Request $request, TenantMailer $mailer, WritesAuditLog $audit): RedirectResponse
+    {
+        /** @var SupabaseUser $user */
+        $user = $request->user();
+
+        [$ok, $message] = $mailer->sendTest($user->email, $user->organizationId);
+
+        $audit->record(
+            action: 'email_integration.test',
+            actorId: $user->profileId,
+            organizationId: $user->organizationId,
+            entity: 'email_integration',
+            entityId: null,
+            meta: ['ok' => $ok, 'to_domain' => Str::after($user->email, '@')],
+        );
+
+        return redirect()->route('platform.email')->with($ok ? 'status' : 'emailError', $message);
     }
 }

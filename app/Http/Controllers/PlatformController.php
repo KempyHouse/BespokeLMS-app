@@ -8,7 +8,10 @@ use App\Auth\SupabaseUser;
 use App\Http\Requests\UpdateTenantBrandingRequest;
 use App\Support\Supabase\Contracts\ReadsDesignTokens;
 use App\Support\Supabase\Contracts\ReadsOrganizations;
+use App\Support\Supabase\Contracts\ReadsTenantEmailAliases;
+use App\Support\Supabase\Contracts\WritesAuditLog;
 use App\Support\Supabase\Contracts\WritesBrandKits;
+use App\Support\Supabase\Contracts\WritesTenantEmailAliases;
 use App\Support\Supabase\Exceptions\SupabaseAuthException;
 use App\Support\Theme\ThemeResolver;
 use Illuminate\Http\RedirectResponse;
@@ -78,6 +81,7 @@ final class PlatformController extends Controller
         ReadsOrganizations $organizations,
         ReadsDesignTokens $designTokens,
         WritesBrandKits $brandKits,
+        ReadsTenantEmailAliases $aliases,
         string $tenant
     ): View {
         /** @var SupabaseUser $user */
@@ -107,6 +111,7 @@ final class PlatformController extends Controller
             'tenant' => $this->buildTenantDetail($row, $byId, $rows),
             'tenants' => $tenants,
             'branding' => $this->buildBranding($tenant, $designTokens, $brandKits),
+            'emailAlias' => $this->buildAlias($tenant, $aliases),
         ]);
     }
 
@@ -119,6 +124,7 @@ final class PlatformController extends Controller
         ReadsOrganizations $organizations,
         WritesBrandKits $brandKits,
         ThemeResolver $theme,
+        WritesAuditLog $audit,
         string $tenant
     ): RedirectResponse {
         try {
@@ -168,9 +174,122 @@ final class PlatformController extends Controller
                 ->with('brandingError', 'The brand kit could not be saved right now. Please try again shortly.');
         }
 
+        /** @var SupabaseUser $user */
+        $user = $request->user();
+        $audit->record(
+            action: 'tenant_branding.updated',
+            actorId: $user->profileId,
+            organizationId: $tenant,
+            entity: 'tenant_branding',
+            entityId: $tenant,
+            meta: ['tokens_changed' => count($upserts), 'tokens_reset' => count($deletes)],
+        );
+
         return redirect()->route('platform.tenants.show', $tenant)
             ->withFragment('branding')
             ->with('status', 'Brand kit saved. This tenant\'s instance now uses the updated tokens.');
+    }
+
+    /**
+     * Save a tenant's email sender identity ("alias"): the from-name/address,
+     * reply-to and sending domain it sends as on the shared platform transport.
+     */
+    public function updateAlias(
+        Request $request,
+        ReadsOrganizations $organizations,
+        WritesTenantEmailAliases $aliases,
+        WritesAuditLog $audit,
+        string $tenant
+    ): RedirectResponse {
+        try {
+            $rows = $organizations->all();
+        } catch (SupabaseAuthException $e) {
+            report($e);
+
+            return redirect()->route('platform.tenants.show', $tenant)
+                ->withFragment('email')
+                ->with('aliasError', 'The tenant could not be loaded right now. Please try again shortly.');
+        }
+
+        $org = null;
+        foreach ($rows as $row) {
+            if ((string) ($row['id'] ?? '') === $tenant) {
+                $org = $row;
+                break;
+            }
+        }
+        if ($org === null) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'from_name' => ['nullable', 'string', 'max:120'],
+            'from_address' => ['nullable', 'email', 'max:200'],
+            'reply_to' => ['nullable', 'email', 'max:200'],
+            'sending_domain' => ['nullable', 'string', 'max:200'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+
+        $attrs = [
+            'from_name' => ($validated['from_name'] ?? '') !== '' ? $validated['from_name'] : null,
+            'from_address' => ($validated['from_address'] ?? '') !== '' ? $validated['from_address'] : null,
+            'reply_to' => ($validated['reply_to'] ?? '') !== '' ? $validated['reply_to'] : null,
+            'sending_domain' => ($validated['sending_domain'] ?? '') !== '' ? $validated['sending_domain'] : null,
+            'is_active' => $request->boolean('is_active'),
+            'updated_at' => now()->toIso8601String(),
+        ];
+
+        try {
+            $aliases->upsert($tenant, $attrs);
+        } catch (SupabaseAuthException $e) {
+            report($e);
+
+            return redirect()->route('platform.tenants.show', $tenant)
+                ->withFragment('email')
+                ->with('aliasError', 'The email alias could not be saved right now. Please try again shortly.');
+        }
+
+        /** @var SupabaseUser $user */
+        $user = $request->user();
+        $audit->record(
+            action: 'tenant_email_alias.updated',
+            actorId: $user->profileId,
+            organizationId: $tenant,
+            entity: 'tenant_email_alias',
+            entityId: $tenant,
+            meta: ['is_active' => $attrs['is_active'], 'has_from' => $attrs['from_address'] !== null],
+        );
+
+        return redirect()->route('platform.tenants.show', $tenant)
+            ->withFragment('email')
+            ->with('status', 'Email alias saved.');
+    }
+
+    /**
+     * Build the email-alias editor model for a tenant: its current sender
+     * identity, or empty defaults when it has none yet. Null on a read failure.
+     *
+     * @return array<string,mixed>|null
+     */
+    private function buildAlias(string $organizationId, ReadsTenantEmailAliases $aliases): ?array
+    {
+        try {
+            $row = $aliases->forOrganization($organizationId);
+        } catch (SupabaseAuthException $e) {
+            report($e);
+
+            return null;
+        }
+
+        return [
+            'exists' => $row !== null,
+            'from_name' => (string) ($row['from_name'] ?? ''),
+            'from_address' => (string) ($row['from_address'] ?? ''),
+            'reply_to' => (string) ($row['reply_to'] ?? ''),
+            'sending_domain' => (string) ($row['sending_domain'] ?? ''),
+            'is_active' => (bool) ($row['is_active'] ?? false),
+            'is_verified' => (bool) ($row['is_verified'] ?? false),
+        ];
     }
 
     /**

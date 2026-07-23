@@ -6,26 +6,36 @@ namespace App\Providers;
 
 use App\Auth\SupabaseUser;
 use App\Auth\SupabaseUserProvider;
+use App\Support\Mail\EmailLogWriter;
+use App\Support\Mail\EmailTransportResolver;
+use App\Support\Mail\TenantMailer;
 use App\Support\Supabase\Contracts\AuthenticatesWithSupabase;
 use App\Support\Supabase\Contracts\ReadsAiIntegrations;
 use App\Support\Supabase\Contracts\ReadsCourses;
 use App\Support\Supabase\Contracts\ReadsDesignTokens;
 use App\Support\Supabase\Contracts\ReadsEmailIntegrations;
+use App\Support\Supabase\Contracts\ReadsLearnerCatalogue;
 use App\Support\Supabase\Contracts\ReadsOrganizations;
 use App\Support\Supabase\Contracts\ReadsProfiles;
+use App\Support\Supabase\Contracts\ReadsTenantEmailAliases;
 use App\Support\Supabase\SupabaseAuth;
 use App\Support\Supabase\Contracts\WritesAiIntegrations;
+use App\Support\Supabase\Contracts\WritesAuditLog;
 use App\Support\Supabase\Contracts\WritesBrandKits;
 use App\Support\Supabase\Contracts\WritesEmailIntegrations;
 use App\Support\Supabase\Contracts\WritesProfiles;
+use App\Support\Supabase\Contracts\WritesTenantEmailAliases;
 use App\Support\Supabase\SupabaseAiIntegrations;
+use App\Support\Supabase\SupabaseAuditLog;
 use App\Support\Supabase\SupabaseBrandKits;
 use App\Support\Supabase\SupabaseCourses;
 use App\Support\Supabase\SupabaseDesignTokens;
 use App\Support\Supabase\SupabaseEmailIntegrations;
+use App\Support\Supabase\SupabaseLearnerCatalogue;
 use App\Support\Supabase\SupabaseOrganizations;
 use App\Support\Supabase\SupabaseProfiles;
 use App\Support\Supabase\SupabaseProfilesWriter;
+use App\Support\Supabase\SupabaseTenantEmailAliases;
 use App\Support\Theme\ThemeResolver;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Foundation\Application;
@@ -80,6 +90,18 @@ class AppServiceProvider extends ServiceProvider
             $config = $app['config']->get('services.supabase', []);
 
             return new SupabaseCourses(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+
+        $this->app->singleton(ReadsLearnerCatalogue::class, function (Application $app): SupabaseLearnerCatalogue {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseLearnerCatalogue(
                 $app->make(HttpFactory::class),
                 (string) ($config['url'] ?? ''),
                 (string) ($config['service_role_key'] ?? ''),
@@ -149,6 +171,67 @@ class AppServiceProvider extends ServiceProvider
         });
         $this->app->bind(ReadsEmailIntegrations::class, SupabaseEmailIntegrations::class);
         $this->app->bind(WritesEmailIntegrations::class, SupabaseEmailIntegrations::class);
+
+        // Audit trail writer (service-role; best-effort append-only logging).
+        $this->app->singleton(WritesAuditLog::class, function (Application $app): SupabaseAuditLog {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseAuditLog(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+
+        // Per-tenant email aliases (service-role). One client implements both
+        // the read and write contracts.
+        $this->app->singleton(SupabaseTenantEmailAliases::class, function (Application $app): SupabaseTenantEmailAliases {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseTenantEmailAliases(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+        $this->app->bind(ReadsTenantEmailAliases::class, SupabaseTenantEmailAliases::class);
+        $this->app->bind(WritesTenantEmailAliases::class, SupabaseTenantEmailAliases::class);
+
+        // Email runtime: the transport resolver + delivery-log writer feed the
+        // TenantMailer, which sends on the enabled transport as the tenant alias.
+        $this->app->singleton(EmailTransportResolver::class, function (Application $app): EmailTransportResolver {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new EmailTransportResolver(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+        $this->app->singleton(EmailLogWriter::class, function (Application $app): EmailLogWriter {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new EmailLogWriter(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+        $this->app->singleton(TenantMailer::class, function (Application $app): TenantMailer {
+            return new TenantMailer(
+                $app->make(EmailTransportResolver::class),
+                $app->make(EmailLogWriter::class),
+                $app['config'],
+            );
+        });
 
         $this->app->singleton(WritesProfiles::class, function (Application $app): SupabaseProfilesWriter {
             /** @var array<string,mixed> $config */

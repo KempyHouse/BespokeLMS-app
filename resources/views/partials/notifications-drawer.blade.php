@@ -2,10 +2,10 @@
      Interim placeholder content: wire to the notifications / ideas / roadmap tables in the DB-driven pass. --}}
 <div id="notifOverlay" onclick="closeNotifications()" class="app-drawer-overlay" aria-hidden="true"></div>
 <aside id="notifPanel" class="app-drawer" role="dialog" aria-modal="true" aria-label="Notifications" aria-hidden="true">
-    <div class="flex items-center justify-between border-b border-line-soft px-5 py-4">
-        <div>
-            <h2 id="notifTitle" class="text-base font-black text-slatecard">Notifications</h2>
-            <p id="notifSub" class="text-mini text-ink-soft"><span id="notifUnreadCount">4</span> unread</p>
+    <div class="flex h-15 items-center justify-between border-b border-line-soft px-5">
+        <div class="min-w-0">
+            <h2 id="notifTitle" class="text-base font-black leading-tight text-slatecard">Notifications</h2>
+            <p id="notifSub" class="text-mini leading-tight text-ink-soft"><span id="notifUnreadCount">4</span> unread</p>
         </div>
         <div class="flex items-center gap-1.5">
             <button type="button" id="notifReadCtl" onclick="markAllNotifsRead()" class="rounded-lg px-2.5 py-1.5 text-mini font-bold text-teachhq transition hover:bg-teachhq-soft focus:outline-none focus:ring-2 focus:ring-teachhq">Mark all read</button>

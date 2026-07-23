@@ -28,6 +28,22 @@
             <p class="mt-2 max-w-2xl text-sm text-ink-soft">Connect the service that sends the platform's email. Enable one provider as the default transport; the others stay available so you can switch provider without code changes. Tenants send on this transport as their own sender identity, set per tenant.</p>
         </div>
 
+        <div class="mb-6 flex flex-wrap items-center gap-3 rounded-panel border border-line bg-surface p-4">
+            <div class="min-w-0 flex-1">
+                <p class="text-sm font-semibold text-slatecard">Send a test</p>
+                <p class="text-caption text-ink-soft">Sends a test message to your own address ({{ $user->email }}) on the enabled transport.</p>
+            </div>
+            <form method="POST" action="{{ route('platform.email.test') }}">
+                @csrf
+                <button type="submit"
+                        class="inline-flex items-center gap-1.5 rounded-control border border-line bg-paper px-4 py-2 text-sm font-semibold text-slatecard transition hover:text-teachhq focus:outline-none focus:ring-2 focus:ring-button-primary focus:ring-offset-2">
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+                    Send test email
+                </button>
+            </form>
+        </div>
+        <p class="mb-6 -mt-3 text-micro text-ink-faint">Saving a provider or sending a test asks you to confirm your password first.</p>
+
         @if (session('status'))
             <div role="status" class="mb-5 flex items-start gap-3 rounded-panel border border-rag-green/40 bg-rag-green-soft p-4 text-sm text-rag-green">
                 <svg class="mt-0.5 h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
