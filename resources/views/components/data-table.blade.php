@@ -402,8 +402,14 @@
                 var options = Array.prototype.slice.call(dd.querySelectorAll('[data-dt-option]'));
                 options.forEach(function (opt) {
                     opt.addEventListener('click', function () {
-                        dd.setAttribute('data-value', opt.getAttribute('data-dt-option') || '');
-                        if (labelEl) labelEl.textContent = opt.getAttribute('data-dt-option-label') || '';
+                        var val = opt.getAttribute('data-dt-option') || '';
+                        dd.setAttribute('data-value', val);
+                        if (labelEl) {
+                            labelEl.textContent = opt.getAttribute('data-dt-option-label') || '';
+                            // Darken the label once a real value is chosen; grey for "All".
+                            labelEl.classList.toggle('text-slatecard', val !== '');
+                            labelEl.classList.toggle('text-ink-soft', val === '');
+                        }
                         options.forEach(function (o) { o.classList.remove('bg-teachhq-soft', 'font-semibold', 'text-teachhq-dark'); o.classList.add('text-slatecard'); });
                         opt.classList.add('bg-teachhq-soft', 'font-semibold', 'text-teachhq-dark'); opt.classList.remove('text-slatecard');
                         dd.removeAttribute('open');
@@ -474,7 +480,10 @@
                 });
             }
 
-            /* Row-actions dropdown (fixed-positioned to escape the scroll clip). */
+            /* Row-actions dropdown. The menu is fixed-positioned AND portaled to
+               <body> on open: the sticky/frozen action cells each create a
+               stacking context, which would otherwise trap the menu behind later
+               rows. Moving it to the body escapes those contexts entirely. */
             var openMenu = null;
             function closeMenu() {
                 if (openMenu) { openMenu.menu.classList.add('hidden'); openMenu.btn.setAttribute('aria-expanded', 'false'); openMenu = null; }
@@ -487,6 +496,7 @@
                     var wasOpen = openMenu && openMenu.menu === menu;
                     closeMenu();
                     if (wasOpen) return;
+                    if (menu.parentNode !== document.body) { document.body.appendChild(menu); }
                     menu.classList.remove('hidden');
                     var r = btn.getBoundingClientRect();
                     var mw = menu.offsetWidth, mh = menu.offsetHeight;

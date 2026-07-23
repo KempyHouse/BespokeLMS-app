@@ -32,7 +32,7 @@
 <details class="group relative w-full sm:w-64" data-dropdown data-tenant-selector>
     <summary id="{{ $id }}" aria-label="{{ $label }}"
              class="flex cursor-pointer items-center justify-between gap-2 rounded-control border border-line bg-surface py-2 pl-3 pr-3 text-sm font-medium text-slatecard transition hover:border-ink-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">
-        <span class="min-w-0 flex-1 truncate {{ $currentLabel ? 'text-slatecard' : 'text-ink-faint' }}">{{ $currentLabel ?? ($label.'…') }}</span>
+        <span class="min-w-0 flex-1 truncate {{ $currentLabel ? 'text-slatecard' : 'text-ink-soft' }}">{{ $currentLabel ?? ($label.'…') }}</span>
         <svg class="select-chevron h-4 w-4 flex-none text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
     </summary>
 
