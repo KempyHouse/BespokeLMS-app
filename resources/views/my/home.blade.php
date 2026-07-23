@@ -131,11 +131,24 @@
                         </button>
                     </div>
 
-                    {{-- Size variants — one is visible; resizing toggles between them. --}}
+                    {{-- Size variants — one is visible; resizing toggles between them.
+                         Rendered via explicit component tags (not a dynamic component)
+                         so bound array props pass natively. A new widget key needs a
+                         case here as well as a row in the dashboard_widgets registry. --}}
                     @foreach (['s', 'm', 'l'] as $sz)
                         @if (in_array($sz, $sizes, true))
                             <div data-variant="{{ $sz }}" @class(['h-full', 'hidden' => $sz !== $size])>
-                                <x-dynamic-component :component="$w['component']" :widget="$w" :metric="$metrics[$key] ?? []" :size="$sz" :comparison="$cmp" :has-data="$whasData" />
+                                @switch($key)
+                                    @case('training_overdue')<x-widgets.training-overdue :widget="$w" :metric="$metrics[$key] ?? []" :size="$sz" :comparison="$cmp" :has-data="$whasData" />@break
+                                    @case('training_to_complete')<x-widgets.training-to-complete :widget="$w" :metric="$metrics[$key] ?? []" :size="$sz" :comparison="$cmp" :has-data="$whasData" />@break
+                                    @case('training_completion_rate')<x-widgets.training-completion-rate :widget="$w" :metric="$metrics[$key] ?? []" :size="$sz" :comparison="$cmp" :has-data="$whasData" />@break
+                                    @case('training_in_progress')<x-widgets.training-in-progress :widget="$w" :metric="$metrics[$key] ?? []" :size="$sz" :comparison="$cmp" :has-data="$whasData" />@break
+                                    @case('training_completed')<x-widgets.training-completed :widget="$w" :metric="$metrics[$key] ?? []" :size="$sz" :comparison="$cmp" :has-data="$whasData" />@break
+                                    @case('training_time')<x-widgets.training-time :widget="$w" :metric="$metrics[$key] ?? []" :size="$sz" :comparison="$cmp" :has-data="$whasData" />@break
+                                    @case('platform_tenant_estate')<x-widgets.platform-tenant-estate :widget="$w" :metric="$metrics[$key] ?? []" :size="$sz" :comparison="$cmp" :has-data="$whasData" />@break
+                                    @case('platform_users')<x-widgets.platform-users :widget="$w" :metric="$metrics[$key] ?? []" :size="$sz" :comparison="$cmp" :has-data="$whasData" />@break
+                                    @case('platform_integration_health')<x-widgets.platform-integration-health :widget="$w" :metric="$metrics[$key] ?? []" :size="$sz" :comparison="$cmp" :has-data="$whasData" />@break
+                                @endswitch
                             </div>
                         @endif
                     @endforeach
