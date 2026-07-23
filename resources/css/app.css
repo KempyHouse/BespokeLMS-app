@@ -401,6 +401,7 @@
         align-self: flex-start;
         max-height: calc(100vh - 6rem);
         overflow-y: auto;
+        scrollbar-gutter: stable;
         overscroll-behavior: contain;
     }
 }
@@ -441,5 +442,15 @@
     }
     @media (prefers-reduced-motion: reduce) {
         .ws-switch__pill { transition: none; }
+    }
+}
+
+@layer base {
+    /* Reserve the scrollbar gutter on every page so navigating between a page
+       that scrolls (tall content) and one that doesn't (short/blank content)
+       never shifts the layout sideways. Keeps the workspace switcher — and
+       everything else — pinned to the exact same position across all pages. */
+    html {
+        scrollbar-gutter: stable;
     }
 }

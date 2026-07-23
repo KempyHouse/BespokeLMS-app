@@ -25,7 +25,7 @@
         <div class="mb-6">
             <p class="text-xs font-bold uppercase tracking-wider text-teachhq">BespokeLMS &middot; Platform owner</p>
             <h2 class="mt-1 text-2xl font-black text-slatecard">Email delivery</h2>
-            <p class="mt-2 max-w-2xl text-sm text-ink-soft">Connect the service that sends the platform's email. Enable one provider as the default transport; the others stay available so you can switch provider without code changes. Tenants send on this transport as their own sender identity, set per tenant.</p>
+            <p class="mt-2 max-w-2xl text-sm text-ink-soft">Connect the service that sends the platform's email. Enable one provider as the default transport; the others stay available so you can <span class="text-teachhq">switch provider without code changes</span>. Tenants send on this transport as their own sender identity, set per tenant.</p>
         </div>
 
         <div class="mb-6 flex flex-wrap items-center gap-3 rounded-panel border border-line bg-surface p-4">
