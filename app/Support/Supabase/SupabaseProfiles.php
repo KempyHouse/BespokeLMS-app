@@ -18,7 +18,7 @@ final class SupabaseProfiles implements ReadsProfiles
     /**
      * PostgREST select: the profile plus its embedded organisation (to-one).
      */
-    private const SELECT = 'id,role,full_name,job_title,avatar_path,theme_preference,organization_id,organizations(name,slug,type)';
+    private const SELECT = 'id,role,first_name,last_name,full_name,job_title,avatar_path,theme_preference,organization_id,organizations(name,slug,type)';
 
     public function __construct(
         private readonly HttpFactory $http,

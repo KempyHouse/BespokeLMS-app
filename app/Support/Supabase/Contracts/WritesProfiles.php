@@ -24,4 +24,20 @@ interface WritesProfiles
      * @throws SupabaseAuthException
      */
     public function updateAvatarPath(string $profileId, ?string $avatarPath): void;
+
+    /**
+     * Update a profile's editable identity fields. full_name is a generated
+     * concatenation in the database, so only the parts are written here.
+     *
+     * @throws SupabaseAuthException
+     */
+    public function updateDetails(string $profileId, string $firstName, string $lastName, ?string $jobTitle): void;
+
+    /**
+     * Upload raw image bytes into the public `avatars` Storage bucket at the
+     * given object path (overwriting any existing object at that path).
+     *
+     * @throws SupabaseAuthException
+     */
+    public function uploadAvatar(string $objectPath, string $contents, string $contentType): void;
 }

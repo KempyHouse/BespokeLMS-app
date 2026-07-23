@@ -10,6 +10,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MyWorkspaceController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\PreferencesController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TeamWorkspaceController;
 use Illuminate\Support\Facades\Route;
 
@@ -51,6 +52,12 @@ Route::middleware('auth')->group(function (): void {
     // Per-user theme preference (light / dark / system). Applied on the client
     // immediately; persisted here to the profile.
     Route::post('preferences/theme', [PreferencesController::class, 'updateTheme'])->name('preferences.theme');
+
+    // A user's own profile: identity fields + avatar image.
+    Route::get('profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::post('profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
+    Route::delete('profile/avatar', [ProfileController::class, 'removeAvatar'])->name('profile.avatar.remove');
 
     /*
     | Platform-owner-only area. The "platform.owner" middleware returns 404 to

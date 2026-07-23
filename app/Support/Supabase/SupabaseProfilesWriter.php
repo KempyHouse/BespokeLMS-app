@@ -34,6 +34,45 @@ final class SupabaseProfilesWriter implements WritesProfiles
         $this->patch($profileId, ['avatar_path' => $avatarPath]);
     }
 
+    public function updateDetails(string $profileId, string $firstName, string $lastName, ?string $jobTitle): void
+    {
+        $this->patch($profileId, [
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'job_title' => $jobTitle,
+        ]);
+    }
+
+    public function uploadAvatar(string $objectPath, string $contents, string $contentType): void
+    {
+        if ($this->serviceRoleKey === '') {
+            throw new SupabaseAuthException('The Supabase service-role key is not configured, so the avatar cannot be uploaded.');
+        }
+
+        $path = ltrim($objectPath, '/');
+
+        try {
+            $response = $this->http
+                ->baseUrl($this->url)
+                ->timeout($this->timeout)
+                ->withHeaders([
+                    'apikey' => $this->serviceRoleKey,
+                    'x-upsert' => 'true',
+                    'Content-Type' => $contentType,
+                    'Cache-Control' => 'max-age=3600',
+                ])
+                ->withToken($this->serviceRoleKey)
+                ->withBody($contents, $contentType)
+                ->post('/storage/v1/object/avatars/'.$path);
+        } catch (ConnectionException $e) {
+            throw new SupabaseAuthException('Could not reach Supabase Storage to upload the avatar.', 0, $e);
+        }
+
+        if (! $response->successful()) {
+            throw new SupabaseAuthException("Avatar upload failed (HTTP {$response->status()}).", $response->status());
+        }
+    }
+
     /**
      * @param  array<string,mixed>  $data
      */
