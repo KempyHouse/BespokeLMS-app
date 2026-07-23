@@ -335,6 +335,15 @@
         position: sticky;
         left: 0;
     }
+    /* The frozen-column separators only appear when the table actually overflows
+       horizontally (i.e. there is something to scroll under them). When it fits,
+       the columns sit flush with no divider. */
+    [data-dt-overflow] .dt-freeze {
+        border-right: 1px solid var(--color-line);
+    }
+    [data-dt-overflow] .dt-freeze-r {
+        border-left: 1px solid var(--color-line);
+    }
     /* Depth cue for horizontal scroll: a soft shadow cast to the right of the
        frozen column, fading in only once the table is scrolled — so the second
        column visibly slides underneath, mirroring a sticky header's drop shadow

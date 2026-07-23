@@ -155,7 +155,7 @@
                     <thead>
                         <tr class="bg-paper">
                             @if ($selectable)
-                                <th scope="col" class="dt-freeze z-20 w-px whitespace-nowrap border-r border-line bg-paper px-3 py-3">
+                                <th scope="col" class="dt-freeze z-20 w-px whitespace-nowrap bg-paper px-3 py-3">
                                     <input type="checkbox" data-dt-selectall aria-label="Select all rows on this page"
                                            class="h-4 w-4 rounded border-line text-teachhq focus:ring-teachhq">
                                 </th>
@@ -177,7 +177,7 @@
                                 </th>
                             @endforeach
                             @if ($rowActions)
-                                <th scope="col" class="dt-freeze-r z-20 w-px whitespace-nowrap border-l border-line bg-paper px-2"><span class="sr-only">Actions</span></th>
+                                <th scope="col" class="dt-freeze-r z-20 w-px whitespace-nowrap bg-paper px-2"><span class="sr-only">Actions</span></th>
                             @endif
                         </tr>
                     </thead>
@@ -200,7 +200,7 @@
                                 @foreach (($row['filters'] ?? []) as $fk => $fv) data-filter-{{ $fk }}="{{ $fv }}" @endforeach
                                 @foreach ($sortAttrs as $sk => $sv) data-sort-{{ $sk }}="{{ $sv }}" @endforeach>
                                 @if ($selectable)
-                                    <td class="dt-freeze z-10 w-px whitespace-nowrap border-r border-line bg-inherit px-3 py-3" data-dt-nonav>
+                                    <td class="dt-freeze z-10 w-px whitespace-nowrap bg-inherit px-3 py-3" data-dt-nonav>
                                         <input type="checkbox" data-dt-select value="{{ $rowId }}" aria-label="Select row"
                                                class="h-4 w-4 rounded border-line text-teachhq focus:ring-teachhq">
                                     </td>
@@ -244,7 +244,7 @@
                                     </td>
                                 @endforeach
                                 @if ($rowActions)
-                                    <td class="dt-freeze-r z-10 w-px whitespace-nowrap border-l border-line bg-inherit px-2 py-3 text-right" data-dt-nonav>
+                                    <td class="dt-freeze-r z-10 w-px whitespace-nowrap bg-inherit px-2 py-3 text-right" data-dt-nonav>
                                         @if (! empty($acts))
                                             <div class="relative inline-block text-left">
                                                 <button type="button" data-dt-actions-toggle aria-haspopup="menu" aria-expanded="false"
@@ -513,6 +513,9 @@
             if (scrollWrap) {
                 var syncScrolled = function () {
                     var max = scrollWrap.scrollWidth - scrollWrap.clientWidth;
+                    // Only frozen-column dividers/shadows when the table overflows.
+                    if (max > 1) { scrollWrap.setAttribute('data-dt-overflow', ''); }
+                    else { scrollWrap.removeAttribute('data-dt-overflow'); }
                     // Left column shadow: shown once scrolled away from the start.
                     if (scrollWrap.scrollLeft > 0) { scrollWrap.setAttribute('data-dt-scrolled', ''); }
                     else { scrollWrap.removeAttribute('data-dt-scrolled'); }
