@@ -16,9 +16,9 @@
             <span class="min-w-0 truncate font-semibold text-slatecard">{{ $course['title'] }}</span>
         </nav>
 
-        <div class="grid gap-8 lg:grid-cols-3">
+        <div class="flex flex-col gap-8 lg:flex-row lg:items-start">
             {{-- Main column --}}
-            <div class="lg:col-span-2">
+            <div class="min-w-0 flex-1">
                 <div class="overflow-hidden rounded-panel border border-line bg-surface shadow-panel">
                     <div class="relative aspect-video overflow-hidden bg-teachhq-soft">
                         @if (! empty($course['cover_url']))
@@ -78,7 +78,7 @@
             </div>
 
             {{-- Sidebar --}}
-            <aside class="lg:sticky lg:top-24 lg:self-start">
+            <aside class="w-full lg:w-menu lg:flex-none lg:sticky lg:top-24">
                 <div class="rounded-panel border border-line bg-surface p-6 shadow-panel">
                     <p class="text-xs font-bold uppercase tracking-wider text-teachhq">Your progress</p>
 

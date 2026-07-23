@@ -23,12 +23,8 @@
             <section class="overflow-hidden rounded-panel border border-line bg-surface shadow-panel">
                 <div class="flex flex-col gap-6 p-6 sm:p-8 lg:flex-row lg:items-center lg:justify-between">
                     <div class="min-w-0 max-w-2xl">
-                        <span class="inline-flex items-center gap-1.5 rounded-full bg-teachhq-soft px-2.5 py-1 text-mini font-bold text-teachhq-dark">
-                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/></svg>
-                            CPD-certified catalogue
-                        </span>
-                        <h1 class="mt-3 text-2xl font-black text-slatecard sm:text-3xl">Browse the Course Library</h1>
-                        <p class="mt-2 text-sm text-ink-soft">Explore CPD-certified training across catering, hospitality, safety and wellbeing. Enrol in your own time and pick up exactly where you left off.</p>
+                        <h1 class="text-2xl font-black text-slatecard sm:text-3xl">Browse the Course Library</h1>
+                        <p class="mt-2 text-sm text-ink-soft">Explore training across catering, hospitality, safety and wellbeing. Enrol in your own time and pick up exactly where you left off.</p>
 
                         <div class="relative mt-5 max-w-md">
                             <label for="library-search" class="sr-only">Search courses</label>

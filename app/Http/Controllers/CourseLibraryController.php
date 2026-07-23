@@ -188,7 +188,7 @@ final class CourseLibraryController extends Controller
                 'level' => ($c['level'] ?? null) !== null ? (string) $c['level'] : null,
                 'duration_label' => $this->durationLabel($c['duration_min'] ?? null),
                 'duration_min' => (int) ($c['duration_min'] ?? 0),
-                'cpd' => ((int) ($c['credits'] ?? 0)) >= 1 || (($c['accreditation'] ?? null) !== null && $c['accreditation'] !== ''),
+                'cpd' => (($c['accreditation'] ?? null) !== null && $c['accreditation'] !== ''),
                 'accreditation' => ($c['accreditation'] ?? null) !== null ? (string) $c['accreditation'] : null,
                 'price_label' => $this->priceLabel($c['price_pennies'] ?? null, (int) ($c['credits'] ?? 0), $comingSoon),
                 'status' => $status,

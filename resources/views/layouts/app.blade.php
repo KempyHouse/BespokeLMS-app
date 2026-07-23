@@ -173,21 +173,6 @@
         @yield('content')
     </main>
 
-    {{-- Temporary prototype reference links (MY-old / TEAM-old). They point at the
-         frozen prototype served at "/" and are removed once the My and Team
-         content has been migrated into the rebuilt Blade pages. --}}
-    <footer class="border-t border-line bg-surface px-4 py-4 sm:px-6 lg:px-12">
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-mini text-ink-soft">
-            <span class="font-bold uppercase tracking-wider text-ink-faint">Prototype reference</span>
-            <span class="text-ink-faint">Temporary &mdash; remove after content is migrated.</span>
-            <nav class="flex items-center gap-3" aria-label="Prototype reference pages">
-                <a href="{{ route('dashboard', ['ws' => 'my']) }}"
-                   class="font-semibold text-teachhq underline-offset-2 transition hover:text-teachhq-dark hover:underline focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-1">MY-old</a>
-                <a href="{{ route('dashboard', ['ws' => 'team']) }}"
-                   class="font-semibold text-teachhq underline-offset-2 transition hover:text-teachhq-dark hover:underline focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-1">TEAM-old</a>
-            </nav>
-        </div>
-    </footer>
 
     @include('partials.notifications-drawer')
     @include('partials.help-chat-drawer')
