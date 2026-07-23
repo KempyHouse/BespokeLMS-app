@@ -98,6 +98,12 @@
     --brand-glow-2: rgba(23, 195, 178, 0.3);
     --height-header: 4.2rem;   /* 84px — sticky app header height; the workspace rail rests just below it */
     --offset-workspace-rail: calc(var(--height-header) + var(--spacing) * 8);  /* 124px — sticky workspace rail rest = header height + main content top padding (pt-8) */
+
+    /* Component values */
+    --size-brand-mark: 2.5rem;               /* 50px — the square "B" logo badge */
+    --text-brand-mark: 1.35rem;              /* the badge "B" glyph */
+    --width-dt-fade: 0.75rem;                /* data-table frozen-column scroll-edge fade */
+    --color-dt-fade: rgba(2, 8, 23, 0.16);   /* frozen-column depth-fade start colour */
 }
 
 @layer base {
@@ -137,15 +143,15 @@
         background: radial-gradient(circle at center, var(--brand-glow-2), transparent 65%);
     }
     .brand-mark {
-        width: 2.5rem;
-        height: 2.5rem;
+        width: var(--size-brand-mark);
+        height: var(--size-brand-mark);
         border-radius: var(--radius-control);
         display: grid;
         place-items: center;
         background: linear-gradient(150deg, var(--color-brand-accent), var(--color-brand-accent-strong));
         color: var(--color-brand-on-accent);
         font-weight: 900;
-        font-size: 1.35rem;
+        font-size: var(--text-brand-mark);
         line-height: 1;
         box-shadow: var(--shadow-cta);
     }
@@ -357,12 +363,12 @@
         top: 0;
         bottom: 0;
         right: 0;
-        width: 0.75rem;
+        width: var(--width-dt-fade);
         transform: translateX(100%);
         pointer-events: none;
         opacity: 0;
         transition: opacity 200ms ease;
-        background: linear-gradient(to right, rgba(2, 8, 23, 0.16), rgba(2, 8, 23, 0));
+        background: linear-gradient(to right, var(--color-dt-fade), transparent);
     }
     [data-dt-scrolled] .dt-freeze::after {
         opacity: 1;
@@ -380,12 +386,12 @@
         top: 0;
         bottom: 0;
         left: 0;
-        width: 0.75rem;
+        width: var(--width-dt-fade);
         transform: translateX(-100%);
         pointer-events: none;
         opacity: 0;
         transition: opacity 200ms ease;
-        background: linear-gradient(to left, rgba(2, 8, 23, 0.16), rgba(2, 8, 23, 0));
+        background: linear-gradient(to left, var(--color-dt-fade), transparent);
     }
     [data-dt-scrolled-r] .dt-freeze-r::before {
         opacity: 1;
