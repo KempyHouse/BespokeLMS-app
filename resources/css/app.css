@@ -86,6 +86,7 @@
     --duration-typing: 1s;     /* chat typing loop */
     --duration-bounce: 520ms;  /* workspace pill bounce */
     --duration-chevron: 200ms; /* dropdown chevron rotate */
+    --duration-ws-slide: 360ms; /* workspace switcher pill slide */
     --ease-drawer: cubic-bezier(0.16, 1, 0.3, 1);
 
     /* Effects */
@@ -401,5 +402,44 @@
         max-height: calc(100vh - 6rem);
         overflow-y: auto;
         overscroll-behavior: contain;
+    }
+}
+
+/*
+ |----------------------------------------------------------------------------
+ | Workspace switcher — sliding pill indicator
+ |----------------------------------------------------------------------------
+ | The active-tab pill is a single absolutely-positioned element inside the
+ | padded track. It is translated between the equal-width tab columns via the
+ | --ws-index custom property, so switching tabs reads as the pill sliding
+ | sideways rather than snapping. Geometry is derived from the Tailwind spacing
+ | token so the pill always lines up with the track's p-1 padding and columns.
+ |
+ | Progressive enhancement: with JS off, the server renders the pill at the
+ | active index (static, still correct). Under prefers-reduced-motion the slide
+ | is removed and navigation happens immediately.
+ */
+@layer components {
+    .ws-switch {
+        position: relative;
+        isolation: isolate;
+    }
+    .ws-switch__pill {
+        position: absolute;
+        top: var(--spacing);
+        bottom: var(--spacing);
+        left: var(--spacing);
+        z-index: 0;
+        width: calc((100% - (var(--spacing) * 2)) / var(--ws-count, 1));
+        transform: translateX(calc(var(--ws-index, 0) * 100%));
+        transition: transform var(--duration-ws-slide) var(--ease-drawer);
+        will-change: transform;
+    }
+    .ws-switch__tab {
+        position: relative;
+        z-index: 1;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .ws-switch__pill { transition: none; }
     }
 }
