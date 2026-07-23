@@ -7,8 +7,10 @@ namespace App\Providers;
 use App\Auth\SupabaseUser;
 use App\Auth\SupabaseUserProvider;
 use App\Support\Supabase\Contracts\AuthenticatesWithSupabase;
+use App\Support\Supabase\Contracts\ReadsOrganizations;
 use App\Support\Supabase\Contracts\ReadsProfiles;
 use App\Support\Supabase\SupabaseAuth;
+use App\Support\Supabase\SupabaseOrganizations;
 use App\Support\Supabase\SupabaseProfiles;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Client\Factory as HttpFactory;
@@ -40,6 +42,18 @@ class AppServiceProvider extends ServiceProvider
                 $app->make(HttpFactory::class),
                 (string) ($config['url'] ?? ''),
                 (string) ($config['anon_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+
+        $this->app->singleton(ReadsOrganizations::class, function (Application $app): SupabaseOrganizations {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseOrganizations(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
                 (int) ($config['timeout'] ?? 10),
             );
         });

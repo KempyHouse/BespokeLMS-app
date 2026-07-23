@@ -2,6 +2,14 @@
 
 @section('title', 'Platform')
 
+@php
+    $operatorSubtypeLabels = [
+        'reseller' => 'Reseller',
+        'inhouse' => 'In-house',
+        'own_brand' => 'Own brand',
+    ];
+@endphp
+
 @section('content')
 <div class="flex flex-col items-start gap-6 lg:flex-row lg:items-stretch lg:gap-8">
     <!-- Left rail -->
@@ -13,16 +21,7 @@
             <span role="tab" aria-selected="true" aria-current="page" class="rounded-full bg-teachhq py-2 text-center text-on-brand shadow-panel">Platform</span>
         </div>
 
-        <div class="rounded-control bg-paper p-6">
-            <!-- Owner identity -->
-            <div class="mb-6 border-b border-line pb-5">
-                <p class="text-xs font-bold uppercase tracking-wider text-teachhq">BespokeLMS &middot; Platform</p>
-                <h1 class="mt-1 text-lg font-black text-slatecard">Platform administration</h1>
-                <p class="mt-2 text-caption text-ink-soft">
-                    {{ $user->displayName() }} ({{ $user->roleLabel() }})
-                </p>
-            </div>
-
+        <div class="rounded-control bg-paper p-5">
             <!-- Platform Workspace -->
             <nav class="mb-6">
                 <div class="mb-2.5 text-xs font-bold uppercase tracking-wider text-teachhq">Platform Workspace</div>
@@ -111,14 +110,100 @@
                 <h2 class="text-2xl font-black text-slatecard">Tenants</h2>
                 <p class="mt-2 text-sm text-ink-soft">Create, brand and configure operator and client organisations across the estate.</p>
             </div>
-            <article class="rounded-panel border border-line bg-surface p-6 shadow-panel">
-                <p class="text-ink-muted">Manage all tenant organizations in the system. This section will display a live list of operators and clients.</p>
-                <div class="mt-4">
-                    <button class="inline-flex rounded-control bg-teachhq px-4 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-2" disabled>
+
+            @if ($estateError)
+                <article class="rounded-panel border border-line bg-rag-red-soft p-6" role="alert">
+                    <p class="text-sm font-medium text-slatecard">{{ $estateError }}</p>
+                </article>
+            @elseif (! $estate || empty($estate['operators']))
+                <article class="rounded-panel border border-line bg-surface p-6 shadow-panel">
+                    <p class="text-ink-muted">No tenant organisations exist yet.</p>
+                    <div class="mt-4">
+                        <button class="inline-flex rounded-control bg-teachhq px-4 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-2" disabled>
+                            + Create Tenant (coming soon)
+                        </button>
+                    </div>
+                </article>
+            @else
+                <!-- Estate summary -->
+                <div class="mb-5 flex flex-wrap items-center gap-2.5">
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-mini font-semibold text-ink-muted">
+                        <span class="font-black text-slatecard">{{ $estate['summary']['operators'] }}</span> operators
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-mini font-semibold text-ink-muted">
+                        <span class="font-black text-slatecard">{{ $estate['summary']['clients'] }}</span> clients
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-mini font-semibold text-ink-muted">
+                        <span class="font-black text-slatecard">{{ $estate['summary']['users'] }}</span> {{ \Illuminate\Support\Str::plural('user', $estate['summary']['users']) }}
+                    </span>
+                    <button class="ml-auto inline-flex rounded-control bg-teachhq px-4 py-2 text-sm font-semibold text-on-brand transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-2" disabled>
                         + Create Tenant (coming soon)
                     </button>
                 </div>
-            </article>
+
+                <!-- Operator tenants -->
+                <ul class="space-y-4">
+                    @foreach ($estate['operators'] as $op)
+                        <li class="rounded-panel border border-line bg-surface p-5 shadow-panel">
+                            <div class="flex flex-wrap items-start justify-between gap-4">
+                                <div class="flex min-w-0 items-start gap-3">
+                                    <span class="flex h-10 w-10 flex-none items-center justify-center rounded-control bg-teachhq-soft text-lg" aria-hidden="true">🏢</span>
+                                    <div class="min-w-0">
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            <h3 class="text-base font-bold text-slatecard">{{ $op['name'] }}</h3>
+                                            <span class="inline-flex items-center rounded-full bg-teachhq-soft px-2 py-0.5 text-micro font-bold text-slatecard">
+                                                {{ $operatorSubtypeLabels[$op['operator_subtype']] ?? 'Operator' }}
+                                            </span>
+                                        </div>
+                                        @if ($op['slug'])
+                                            <p class="mt-0.5 text-mini text-ink-soft">/{{ $op['slug'] }}</p>
+                                        @endif
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-mini text-ink-soft">
+                                    <span>{{ $op['user_count'] }} {{ \Illuminate\Support\Str::plural('user', $op['user_count']) }}</span>
+                                    @if ($op['has_client_layer'])
+                                        <span>{{ $op['client_count'] }} {{ \Illuminate\Support\Str::plural('client', $op['client_count']) }}</span>
+                                    @endif
+                                    @if ($op['created_at'])
+                                        <span>Added {{ \Illuminate\Support\Carbon::parse($op['created_at'])->format('j M Y') }}</span>
+                                    @endif
+                                </div>
+                            </div>
+
+                            @if ($op['has_client_layer'])
+                                <div class="mt-4 border-t border-line pt-3">
+                                    <div class="mb-2 text-micro font-bold uppercase tracking-wider text-ink-soft">Client organisations ({{ $op['client_count'] }})</div>
+                                    @if (! empty($op['clients']))
+                                        <ul class="divide-y divide-line">
+                                            @foreach ($op['clients'] as $client)
+                                                <li class="flex flex-wrap items-center justify-between gap-2 py-2">
+                                                    <div class="min-w-0">
+                                                        <span class="text-sm font-medium text-slatecard">{{ $client['name'] }}</span>
+                                                        @if ($client['location'])
+                                                            <span class="ml-2 text-mini text-ink-soft">{{ $client['location'] }}</span>
+                                                        @endif
+                                                    </div>
+                                                    <div class="flex items-center gap-2">
+                                                        @if ($client['subtype'])
+                                                            <span class="inline-flex items-center rounded-full bg-line-soft px-2 py-0.5 text-micro font-bold text-ink-muted">{{ ucfirst($client['subtype']) }}</span>
+                                                        @endif
+                                                        <span class="text-mini text-ink-soft">{{ $client['user_count'] }} {{ \Illuminate\Support\Str::plural('user', $client['user_count']) }}</span>
+                                                    </div>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    @else
+                                        <p class="text-sm text-ink-soft">No client organisations yet.</p>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="mt-4 border-t border-line pt-3 text-mini text-ink-soft">In-house training — no client layer.</div>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
         </section>
 
         <!-- Global Courses -->
