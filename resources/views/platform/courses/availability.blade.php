@@ -100,12 +100,12 @@
                         <div class="author-row grid grid-cols-1 gap-3 rounded-control border border-line bg-paper p-3 sm:grid-cols-[1fr_1fr_auto]">
                             <div>
                                 <label class="{{ $labelCls }} text-xs">Person</label>
-                                <select name="authors[{{ $i }}][profile_id]" class="{{ $fieldCls }}">
+                                <x-ds-select name="authors[{{ $i }}][profile_id]">
                                     <option value="">— External / named —</option>
                                     @foreach ($profileOptions as $opt)
                                         <option value="{{ $opt['value'] }}" @selected(($a['profile_id'] ?? null) === $opt['value'])>{{ $opt['label'] }}</option>
                                     @endforeach
-                                </select>
+                                </x-ds-select>
                                 <input type="text" name="authors[{{ $i }}][display_name]" value="{{ $a['display_name'] ?? '' }}" class="{{ $fieldCls }}" placeholder="External name (if not internal)">
                             </div>
                             <div>
@@ -134,12 +134,12 @@
     <div class="author-row grid grid-cols-1 gap-3 rounded-control border border-line bg-paper p-3 sm:grid-cols-[1fr_1fr_auto]">
         <div>
             <label class="block text-xs font-semibold text-slatecard">Person</label>
-            <select name="authors[__IDX__][profile_id]" class="mt-1.5 w-full rounded-control border border-line bg-paper px-3 py-2 text-sm text-slatecard focus:outline-none focus:ring-2 focus:ring-button-primary">
+            <x-ds-select name="authors[__IDX__][profile_id]">
                 <option value="">— External / named —</option>
                 @foreach ($profileOptions as $opt)
                     <option value="{{ $opt['value'] }}">{{ $opt['label'] }}</option>
                 @endforeach
-            </select>
+            </x-ds-select>
             <input type="text" name="authors[__IDX__][display_name]" class="mt-1.5 w-full rounded-control border border-line bg-paper px-3 py-2 text-sm text-slatecard placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-button-primary" placeholder="External name (if not internal)">
         </div>
         <div>

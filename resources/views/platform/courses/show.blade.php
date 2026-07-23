@@ -100,28 +100,28 @@
                 <div class="grid gap-4 sm:grid-cols-3">
                     <div>
                         <label for="f-category" class="{{ $lblCls }}">Category</label>
-                        <select id="f-category" name="category_id" class="{{ $inCls }}">
+                        <x-ds-select id="f-category" name="category_id">
                             <option value="">&mdash; None &mdash;</option>
                             @foreach ($categoryOptions as $opt)
                                 <option value="{{ $opt['value'] }}" @selected(old('category_id', $course['category_id']) === $opt['value'])>{{ $opt['label'] }}</option>
                             @endforeach
-                        </select>
+                        </x-ds-select>
                     </div>
                     <div>
                         <label for="f-status" class="{{ $lblCls }}">Status</label>
-                        <select id="f-status" name="catalog_status" class="{{ $inCls }}">
+                        <x-ds-select id="f-status" name="catalog_status">
                             @foreach (['published' => 'Published', 'coming_soon' => 'Coming soon', 'retired' => 'Retired'] as $val => $label)
                                 <option value="{{ $val }}" @selected(old('catalog_status', $course['status']) === $val)>{{ $label }}</option>
                             @endforeach
-                        </select>
+                        </x-ds-select>
                     </div>
                     <div>
                         <label for="f-type" class="{{ $lblCls }}">Content type</label>
-                        <select id="f-type" name="content_type" class="{{ $inCls }}">
+                        <x-ds-select id="f-type" name="content_type">
                             @foreach (['native' => 'Native', 'scorm' => 'SCORM', 'mixed' => 'Mixed'] as $val => $label)
                                 <option value="{{ $val }}" @selected(old('content_type', $course['type']) === $val)>{{ $label }}</option>
                             @endforeach
-                        </select>
+                        </x-ds-select>
                     </div>
                 </div>
 

@@ -97,11 +97,11 @@
                 <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label for="pricing_type" class="{{ $labelCls }}">Pricing mechanism</label>
-                        <select id="pricing_type" name="pricing_type" class="{{ $fieldCls }}">
+                        <x-ds-select id="pricing_type" name="pricing_type">
                             @foreach ($typeOptions as $opt)
                                 <option value="{{ $opt['value'] }}" @selected($type === $opt['value'])>{{ $opt['label'] }}</option>
                             @endforeach
-                        </select>
+                        </x-ds-select>
                     </div>
                     <div>
                         <label for="currency" class="{{ $labelCls }}">Currency</label>
@@ -131,11 +131,11 @@
                 <div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <div>
                         <label for="retry_mode" class="{{ $labelCls }}">Attempts to pass the assessment</label>
-                        <select id="retry_mode" name="retry_mode" class="{{ $fieldCls }}">
+                        <x-ds-select id="retry_mode" name="retry_mode">
                             <option value="inherit" @selected($retryMode === 'inherit')>Inherit platform default</option>
                             <option value="unlimited" @selected($retryMode === 'unlimited')>Unlimited</option>
                             <option value="limited" @selected($retryMode === 'limited')>Limited to…</option>
-                        </select>
+                        </x-ds-select>
                     </div>
                     <div>
                         <label for="retry_limit" class="{{ $labelCls }}">Attempt limit</label>
@@ -143,12 +143,12 @@
                     </div>
                     <div>
                         <label for="retake_mode" class="{{ $labelCls }}">Retakes after passing</label>
-                        <select id="retake_mode" name="retake_mode" class="{{ $fieldCls }}">
+                        <x-ds-select id="retake_mode" name="retake_mode">
                             <option value="inherit" @selected($retakeMode === 'inherit')>Inherit platform default</option>
                             <option value="none" @selected($retakeMode === 'none')>Not allowed</option>
                             <option value="unlimited" @selected($retakeMode === 'unlimited')>Unlimited</option>
                             <option value="limited" @selected($retakeMode === 'limited')>Limited to…</option>
-                        </select>
+                        </x-ds-select>
                     </div>
                     <div>
                         <label for="retake_limit" class="{{ $labelCls }}">Retake limit</label>
@@ -156,11 +156,11 @@
                     </div>
                     <div class="sm:col-span-2">
                         <label for="revoke_mode" class="{{ $labelCls }}">Access once the learner has passed</label>
-                        <select id="revoke_mode" name="revoke_mode" class="{{ $fieldCls }}">
+                        <x-ds-select id="revoke_mode" name="revoke_mode">
                             <option value="inherit" @selected($revokeMode === 'inherit')>Inherit platform default</option>
                             <option value="no" @selected($revokeMode === 'no')>Keep access to the course</option>
                             <option value="yes" @selected($revokeMode === 'yes')>Close the course (pay-as-you-go)</option>
-                        </select>
+                        </x-ds-select>
                     </div>
                 </div>
             </section>

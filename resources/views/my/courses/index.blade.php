@@ -115,21 +115,19 @@
                     {{-- Status + sort --}}
                     <div class="flex flex-none items-center gap-2">
                         <label for="library-status" class="sr-only">Filter by status</label>
-                        <select id="library-status" data-library-status
-                                class="rounded-control border border-line bg-surface py-2 pl-3 pr-8 text-mini font-semibold text-slatecard focus:outline-none focus:ring-2 focus:ring-teachhq">
+                        <x-ds-select id="library-status" data-library-status>
                             <option value="">All statuses</option>
                             @foreach ($statusOptions as $opt)
                                 <option value="{{ $opt['value'] }}">{{ $opt['label'] }}</option>
                             @endforeach
-                        </select>
+                        </x-ds-select>
                         <label for="library-sort" class="sr-only">Sort courses</label>
-                        <select id="library-sort" data-library-sort
-                                class="rounded-control border border-line bg-surface py-2 pl-3 pr-8 text-mini font-semibold text-slatecard focus:outline-none focus:ring-2 focus:ring-teachhq">
+                        <x-ds-select id="library-sort" data-library-sort>
                             <option value="recommended">Sort: Recommended</option>
                             <option value="az">Title A–Z</option>
                             <option value="shortest">Shortest first</option>
                             <option value="newest">Newest first</option>
-                        </select>
+                        </x-ds-select>
                     </div>
                 </div>
 

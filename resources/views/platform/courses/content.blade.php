@@ -62,7 +62,7 @@
                     <p class="text-sm font-semibold text-slatecard">Version {{ $draft['semver'] ?? '' }} · draft (v{{ $draft['version_no'] ?? '' }})</p>
                     <p class="mt-0.5 text-mini text-ink-faint">Publishing makes this the live version. Learners already enrolled stay on the version they started.</p>
                 </div>
-                <form method="POST" action="{{ route('platform.courses.content.publish', $c['id']) }}" onsubmit="return confirm('Publish this draft as the live version?');">
+                <form method="POST" action="{{ route('platform.courses.content.publish', $c['id']) }}" data-confirm="Publish this draft as the live version?">
                     @csrf
                     <button type="submit" class="inline-flex items-center gap-1.5 rounded-control bg-button-primary px-4 py-2 text-sm font-semibold text-button-primary-text transition hover:bg-button-primary-hover focus:outline-none focus:ring-2 focus:ring-button-primary focus:ring-offset-2">Publish draft</button>
                 </form>
@@ -82,7 +82,7 @@
                             <input type="text" name="title" value="{{ $module['title'] ?? '' }}" class="{{ $fieldCls }} min-w-0 flex-1 font-semibold" aria-label="Module title">
                             <button type="submit" class="rounded-control border border-line px-3 py-1.5 text-sm font-semibold text-slatecard transition hover:bg-paper">Rename</button>
                         </form>
-                        <form method="POST" action="{{ $act }}" onsubmit="return confirm('Delete this module and everything in it?');"><input type="hidden" name="action" value="delete_module"><input type="hidden" name="id" value="{{ $module['id'] }}">@csrf<button type="submit" class="rounded-control border border-line px-3 py-1.5 text-sm font-semibold text-rag-red transition hover:bg-rag-red-soft">Delete</button></form>
+                        <form method="POST" action="{{ $act }}" data-confirm="Delete this module and everything in it?"><input type="hidden" name="action" value="delete_module"><input type="hidden" name="id" value="{{ $module['id'] }}">@csrf<button type="submit" class="rounded-control border border-line px-3 py-1.5 text-sm font-semibold text-rag-red transition hover:bg-rag-red-soft">Delete</button></form>
                     </header>
 
                     <div class="space-y-3 p-4">
@@ -99,7 +99,7 @@
                                         <input type="text" name="title" value="{{ $lesson['title'] ?? '' }}" class="{{ $fieldCls }} min-w-0 flex-1" aria-label="Lesson title">
                                         <button type="submit" class="rounded-control border border-line px-2.5 py-1 text-xs font-semibold text-slatecard transition hover:bg-surface">Rename</button>
                                     </form>
-                                    <form method="POST" action="{{ $act }}" onsubmit="return confirm('Delete this lesson and its slides?');"><input type="hidden" name="action" value="delete_lesson"><input type="hidden" name="id" value="{{ $lesson['id'] }}">@csrf<button type="submit" class="rounded-control border border-line px-2.5 py-1 text-xs font-semibold text-rag-red transition hover:bg-rag-red-soft">Delete</button></form>
+                                    <form method="POST" action="{{ $act }}" data-confirm="Delete this lesson and its slides?"><input type="hidden" name="action" value="delete_lesson"><input type="hidden" name="id" value="{{ $lesson['id'] }}">@csrf<button type="submit" class="rounded-control border border-line px-2.5 py-1 text-xs font-semibold text-rag-red transition hover:bg-rag-red-soft">Delete</button></form>
                                 </div>
 
                                 {{-- Slides --}}
@@ -117,7 +117,7 @@
                                                 <input type="text" name="title" value="{{ $slide['title'] ?? '' }}" placeholder="Untitled slide" class="{{ $fieldCls }} min-w-0 flex-1 py-1 text-xs" aria-label="Slide title">
                                                 <button type="submit" class="rounded-control border border-line px-2 py-1 text-micro font-semibold text-slatecard transition hover:bg-paper">Save</button>
                                             </form>
-                                            <form method="POST" action="{{ $act }}" onsubmit="return confirm('Delete this slide?');"><input type="hidden" name="action" value="delete_slide"><input type="hidden" name="id" value="{{ $slide['id'] }}">@csrf<button type="submit" class="rounded-control border border-line px-2 py-1 text-micro font-semibold text-rag-red transition hover:bg-rag-red-soft">Delete</button></form>
+                                            <form method="POST" action="{{ $act }}" data-confirm="Delete this slide?"><input type="hidden" name="action" value="delete_slide"><input type="hidden" name="id" value="{{ $slide['id'] }}">@csrf<button type="submit" class="rounded-control border border-line px-2 py-1 text-micro font-semibold text-rag-red transition hover:bg-rag-red-soft">Delete</button></form>
                                         </li>
                                     @endforeach
                                 </ul>
@@ -125,11 +125,11 @@
                                 {{-- Add slide --}}
                                 <form method="POST" action="{{ $act }}" class="mt-2 flex flex-wrap items-center gap-2 pl-4">
                                     <input type="hidden" name="action" value="add_slide"><input type="hidden" name="parent_id" value="{{ $lesson['id'] }}">@csrf
-                                    <select name="slide_type" class="{{ $fieldCls }} py-1 text-xs" aria-label="Slide type">
+                                    <x-ds-select name="slide_type" aria-label="Slide type">
                                         <option value="image_text">Image &amp; text</option>
                                         <option value="video">Video</option>
                                         <option value="document">Document</option>
-                                    </select>
+                                    </x-ds-select>
                                     <input type="text" name="title" placeholder="Slide title (optional)" class="{{ $fieldCls }} py-1 text-xs">
                                     <button type="submit" class="rounded-control bg-teachhq px-2.5 py-1 text-xs font-semibold text-white transition hover:bg-teachhq-dark">+ Slide</button>
                                 </form>

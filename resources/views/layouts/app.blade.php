@@ -427,6 +427,8 @@
     </script>
 
     {{-- Page/component-pushed scripts (e.g. the reusable data-table behaviour). --}}
+    <x-confirm-modal />
+
     @stack('scripts')
 </body>
 </html>

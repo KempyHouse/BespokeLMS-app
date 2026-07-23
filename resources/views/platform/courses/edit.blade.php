@@ -65,28 +65,28 @@
                     </div>
                     <div>
                         <label for="category_id" class="{{ $labelCls }}">Category</label>
-                        <select id="category_id" name="category_id" class="{{ $fieldCls }}">
+                        <x-ds-select id="category_id" name="category_id">
                             <option value="">— None —</option>
                             @foreach ($categoryOptions as $opt)
                                 <option value="{{ $opt['value'] }}" @selected($val('category_id') === $opt['value'])>{{ $opt['label'] }}</option>
                             @endforeach
-                        </select>
+                        </x-ds-select>
                     </div>
                     <div>
                         <label for="catalog_status" class="{{ $labelCls }}">Catalogue status</label>
-                        <select id="catalog_status" name="catalog_status" class="{{ $fieldCls }}">
+                        <x-ds-select id="catalog_status" name="catalog_status">
                             @foreach ($statusOptions as $opt)
                                 <option value="{{ $opt['value'] }}" @selected($val('catalog_status','published') === $opt['value'])>{{ $opt['label'] }}</option>
                             @endforeach
-                        </select>
+                        </x-ds-select>
                     </div>
                     <div>
                         <label for="content_type" class="{{ $labelCls }}">Type</label>
-                        <select id="content_type" name="content_type" class="{{ $fieldCls }}">
+                        <x-ds-select id="content_type" name="content_type">
                             @foreach ($typeOptions as $opt)
                                 <option value="{{ $opt['value'] }}" @selected($val('content_type','native') === $opt['value'])>{{ $opt['label'] }}</option>
                             @endforeach
-                        </select>
+                        </x-ds-select>
                     </div>
                     <div>
                         <label for="duration_min" class="{{ $labelCls }}">Time to complete (minutes)</label>
