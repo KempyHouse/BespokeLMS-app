@@ -10,11 +10,6 @@
 
         <div class="rounded-control bg-paper p-6">
             <div class="mb-5 border-b border-line pb-5">
-                <a href="{{ route('platform.home') }}"
-                   class="inline-flex items-center gap-1.5 text-xs font-semibold text-teachhq transition hover:text-teachhq-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq focus-visible:ring-offset-2">
-                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
-                    All tenants
-                </a>
                 <p class="mt-3 text-xs font-bold uppercase tracking-wider text-teachhq">{{ $tenant['type_label'] }} tenant</p>
                 <h1 class="mt-1 text-xl font-black text-slatecard">{{ $tenant['name'] }}</h1>
             </div>
@@ -49,6 +44,11 @@
 
     <!-- Main content -->
     <main class="min-w-0 flex-1">
+        <x-breadcrumb :items="[
+            ['label' => 'Platform', 'href' => route('platform.home')],
+            ['label' => $tenant['name']],
+        ]" />
+
         <!-- Header -->
         <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="min-w-0">
