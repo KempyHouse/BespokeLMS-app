@@ -102,13 +102,18 @@ final class SupabaseBrandKits implements WritesBrandKits
         $this->assertConfigured();
 
         // Delete cleared tokens first (single request via the in.() filter).
+        // PostgREST filters MUST travel in the query string: Laravel's
+        // ->delete($url, $data) would send them as the request body, leaving the
+        // DELETE unfiltered — which PostgREST rejects with "DELETE requires a
+        // WHERE clause" (HTTP 400). Build the URL with the filters instead.
         $deletes = array_values(array_filter($deletes, static fn ($k): bool => is_string($k) && $k !== ''));
         if ($deletes !== []) {
+            $deleteUrl = '/rest/v1/brand_kit_tokens?'.http_build_query([
+                'brand_kit_id' => 'eq.'.$brandKitId,
+                'token_key' => 'in.('.implode(',', $deletes).')',
+            ]);
             try {
-                $response = $this->request()->delete('/rest/v1/brand_kit_tokens', [
-                    'brand_kit_id' => 'eq.'.$brandKitId,
-                    'token_key' => 'in.('.implode(',', $deletes).')',
-                ]);
+                $response = $this->request()->delete($deleteUrl);
             } catch (ConnectionException $e) {
                 throw new SupabaseAuthException('Could not reach Supabase to clear brand tokens.', 0, $e);
             }
