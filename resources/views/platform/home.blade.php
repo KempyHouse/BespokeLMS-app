@@ -3,48 +3,228 @@
 @section('title', 'Platform')
 
 @section('content')
-    <div class="mb-8">
-        <p class="text-sm font-semibold uppercase tracking-wide text-teachhq">BespokeLMS · Platform</p>
-        <h1 class="mt-1 text-2xl font-black text-slatecard">Platform administration</h1>
-        <p class="mt-2 max-w-2xl text-sm text-slate-500">
-            Signed in as {{ $user->displayName() }} ({{ $user->email }}) · {{ $user->roleLabel() }}.
-            This area is exclusive to BespokeLMS platform owners and is enforced both here and by
-            row-level security in the database.
-        </p>
-    </div>
-
-    <section aria-labelledby="scope-heading" class="rounded-control border border-slate-200 bg-white p-6">
-        <h2 id="scope-heading" class="text-lg font-bold text-slatecard">What you manage here</h2>
-        <p class="mt-1 text-sm text-slate-500">The platform tier spans every tenant in the estate.</p>
-
-        <div class="mt-5 grid gap-4 sm:grid-cols-2">
-            <article class="rounded-control border border-slate-200 bg-paper p-4">
-                <h3 class="font-semibold text-slatecard">Tenants</h3>
-                <p class="mt-1 text-sm text-slate-500">Create, brand and configure operator and client organisations across the estate.</p>
-            </article>
-            <article class="rounded-control border border-slate-200 bg-paper p-4">
-                <h3 class="font-semibold text-slatecard">Global course catalogue</h3>
-                <p class="mt-1 text-sm text-slate-500">Publish system courses that cascade to every tenant.</p>
-            </article>
-            <article class="rounded-control border border-slate-200 bg-paper p-4">
-                <h3 class="font-semibold text-slatecard">Platform settings</h3>
-                <p class="mt-1 text-sm text-slate-500">Platform-wide branding and configuration, held at the owner level.</p>
-            </article>
-            <article class="rounded-control border border-slate-200 bg-paper p-4">
-                <h3 class="font-semibold text-slatecard">AI integration</h3>
-                <p class="mt-1 text-sm text-slate-500">The Claude (Anthropic) integration is configured once here, at the platform-owner level.</p>
-            </article>
+<div class=”flex gap-6”>
+    <!-- Left Sidebar -->
+    <aside class=”w-56 flex-shrink-0”>
+        <!-- User Info -->
+        <div class=”mb-8”>
+            <p class=”text-sm font-semibold uppercase tracking-wide text-teachhq”>BespokeLMS · Platform</p>
+            <h1 class=”mt-1 text-lg font-black text-slatecard”>Platform administration</h1>
+            <p class=”mt-2 text-xs text-slate-500”>
+                {{ $user->displayName() }} ({{ $user->roleLabel() }})
+            </p>
         </div>
 
-        <p class="mt-5 text-sm text-slate-500">
-            The live tenant list and the “view as tenant” switch are wired in the next build step.
-        </p>
+        <!-- Platform Workspace Section -->
+        <nav class=”mb-8”>
+            <h2 class=”mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400”>Platform Workspace</h2>
+            <ul class=”space-y-2”>
+                <li>
+                    <a href=”#tenants”
+                       class=”block rounded-control px-3 py-2 text-sm font-medium text-slatecard transition hover:bg-paper focus:outline-none”
+                       data-section=”tenants”>
+                        <span class=”inline-block mr-2”>🏢</span>Tenants
+                    </a>
+                </li>
+                <li>
+                    <a href=”#courses”
+                       class=”block rounded-control px-3 py-2 text-sm font-medium text-slatecard transition hover:bg-paper focus:outline-none”
+                       data-section=”courses”>
+                        <span class=”inline-block mr-2”>📖</span>Global Courses
+                    </a>
+                </li>
+                <li>
+                    <a href=”#settings”
+                       class=”block rounded-control px-3 py-2 text-sm font-medium text-slatecard transition hover:bg-paper focus:outline-none”
+                       data-section=”settings”>
+                        <span class=”inline-block mr-2”>⚙</span>Platform Settings
+                    </a>
+                </li>
+                <li>
+                    <a href=”#ai”
+                       class=”block rounded-control px-3 py-2 text-sm font-medium text-slatecard transition hover:bg-paper focus:outline-none”
+                       data-section=”ai”>
+                        <span class=”inline-block mr-2”>⚡</span>AI Integration
+                    </a>
+                </li>
+            </ul>
+        </nav>
 
-        <div class="mt-6">
-            <a href="{{ route('dashboard') }}"
-               class="inline-flex rounded-control border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slatecard transition hover:bg-paper focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-2">
+        <!-- Monitor Section -->
+        <nav>
+            <h2 class=”mb-3 text-xs font-semibold uppercase tracking-wide text-slate-400”>Monitor</h2>
+            <ul class=”space-y-2”>
+                <li>
+                    <a href=”#users”
+                       class=”block rounded-control px-3 py-2 text-sm font-medium text-slatecard transition hover:bg-paper focus:outline-none”
+                       data-section=”users”>
+                        <span class=”inline-block mr-2”>👤</span>Platform Users
+                    </a>
+                </li>
+                <li>
+                    <a href=”#analytics”
+                       class=”block rounded-control px-3 py-2 text-sm font-medium text-slatecard transition hover:bg-paper focus:outline-none”
+                       data-section=”analytics”>
+                        <span class=”inline-block mr-2”>📈</span>Usage & Analytics
+                    </a>
+                </li>
+                <li>
+                    <a href=”#logs”
+                       class=”block rounded-control px-3 py-2 text-sm font-medium text-slatecard transition hover:bg-paper focus:outline-none”
+                       data-section=”logs”>
+                        <span class=”inline-block mr-2”>📋</span>Integration Logs
+                    </a>
+                </li>
+                <li>
+                    <a href=”#security”
+                       class=”block rounded-control px-3 py-2 text-sm font-medium text-slatecard transition hover:bg-paper focus:outline-none”
+                       data-section=”security”>
+                        <span class=”inline-block mr-2”>🔒</span>Security
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Back to Dashboard -->
+        <div class=”mt-8 pt-6 border-t border-slate-200”>
+            <a href=”{{ route('dashboard') }}”
+               class=”inline-flex rounded-control border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slatecard transition hover:bg-paper focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-2”>
                 ← Back to dashboard
             </a>
         </div>
-    </section>
+    </aside>
+
+    <!-- Right Content Area -->
+    <main class=”flex-1”>
+        <!-- Tenants Section -->
+        <section id=”tenants-content” class=”content-section mb-8”>
+            <div class=”mb-6”>
+                <h2 class=”text-2xl font-black text-slatecard”>Tenants</h2>
+                <p class=”mt-2 text-sm text-slate-500”>Create, brand and configure operator and client organisations across the estate.</p>
+            </div>
+            <article class=”rounded-control border border-slate-200 bg-white p-6”>
+                <p class=”text-slate-600”>Manage all tenant organizations in the system. This section will display a live list of operators and clients.</p>
+                <div class=”mt-4”>
+                    <button class=”inline-flex rounded-control bg-teachhq px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-2” disabled>
+                        + Create Tenant (coming soon)
+                    </button>
+                </div>
+            </article>
+        </section>
+
+        <!-- Global Courses Section -->
+        <section id=”courses-content” class=”content-section mb-8 hidden”>
+            <div class=”mb-6”>
+                <h2 class=”text-2xl font-black text-slatecard”>Global Course Catalogue</h2>
+                <p class=”mt-2 text-sm text-slate-500”>Publish system courses that cascade to every tenant.</p>
+            </div>
+            <article class=”rounded-control border border-slate-200 bg-white p-6”>
+                <p class=”text-slate-600”>Manage system-wide courses that are available across all tenants.</p>
+                <div class=”mt-4”>
+                    <button class=”inline-flex rounded-control bg-teachhq px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-2” disabled>
+                        + Publish Course (coming soon)
+                    </button>
+                </div>
+            </article>
+        </section>
+
+        <!-- Platform Settings Section -->
+        <section id=”settings-content” class=”content-section mb-8 hidden”>
+            <div class=”mb-6”>
+                <h2 class=”text-2xl font-black text-slatecard”>Platform Settings</h2>
+                <p class=”mt-2 text-sm text-slate-500”>Platform-wide branding and configuration, held at the owner level.</p>
+            </div>
+            <article class=”rounded-control border border-slate-200 bg-white p-6”>
+                <p class=”text-slate-600”>Configure platform-wide settings including branding, authentication, and system preferences.</p>
+            </article>
+        </section>
+
+        <!-- AI Integration Section -->
+        <section id=”ai-content” class=”content-section mb-8 hidden”>
+            <div class=”mb-6”>
+                <h2 class=”text-2xl font-black text-slatecard”>AI Integration</h2>
+                <p class=”mt-2 text-sm text-slate-500”>The Claude (Anthropic) integration is configured once here, at the platform-owner level.</p>
+            </div>
+            <article class=”rounded-control border border-slate-200 bg-white p-6”>
+                <p class=”text-slate-600”>Manage Claude AI integration settings, API keys, and usage quotas for the entire platform.</p>
+            </article>
+        </section>
+
+        <!-- Platform Users Section -->
+        <section id=”users-content” class=”content-section mb-8 hidden”>
+            <div class=”mb-6”>
+                <h2 class=”text-2xl font-black text-slatecard”>Platform Users</h2>
+                <p class=”mt-2 text-sm text-slate-500”>View and manage all users across the platform.</p>
+            </div>
+            <article class=”rounded-control border border-slate-200 bg-white p-6”>
+                <p class=”text-slate-600”>See all users across all tenants, manage roles, and handle platform-wide user administration.</p>
+            </article>
+        </section>
+
+        <!-- Usage & Analytics Section -->
+        <section id=”analytics-content” class=”content-section mb-8 hidden”>
+            <div class=”mb-6”>
+                <h2 class=”text-2xl font-black text-slatecard”>Usage & Analytics</h2>
+                <p class=”mt-2 text-sm text-slate-500”>Platform-wide usage statistics and insights.</p>
+            </div>
+            <article class=”rounded-control border border-slate-200 bg-white p-6”>
+                <p class=”text-slate-600”>View platform-wide analytics including user engagement, course completions, and system performance metrics.</p>
+            </article>
+        </section>
+
+        <!-- Integration Logs Section -->
+        <section id=”logs-content” class=”content-section mb-8 hidden”>
+            <div class=”mb-6”>
+                <h2 class=”text-2xl font-black text-slatecard”>Integration Logs</h2>
+                <p class=”mt-2 text-sm text-slate-500”>Track all AI integration activity.</p>
+            </div>
+            <article class=”rounded-control border border-slate-200 bg-white p-6”>
+                <p class=”text-slate-600”>Monitor Claude AI API calls, responses, and system integration events across the platform.</p>
+            </article>
+        </section>
+
+        <!-- Security Section -->
+        <section id=”security-content” class=”content-section mb-8 hidden”>
+            <div class=”mb-6”>
+                <h2 class=”text-2xl font-black text-slatecard”>Security</h2>
+                <p class=”mt-2 text-sm text-slate-500”>Platform security and audit management.</p>
+            </div>
+            <article class=”rounded-control border border-slate-200 bg-white p-6”>
+                <p class=”text-slate-600”>Access audit logs, manage roles and permissions, and monitor platform security events.</p>
+            </article>
+        </section>
+    </main>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const menuLinks = document.querySelectorAll('[data-section]');
+    const contentSections = document.querySelectorAll('.content-section');
+
+    menuLinks.forEach(link => {
+        link.addEventListener('click', function (e) {
+            e.preventDefault();
+            const sectionName = this.getAttribute('data-section');
+
+            // Hide all sections
+            contentSections.forEach(section => section.classList.add('hidden'));
+
+            // Show selected section
+            const selectedSection = document.getElementById(sectionName + '-content');
+            if (selectedSection) {
+                selectedSection.classList.remove('hidden');
+            }
+
+            // Update active menu item styling
+            menuLinks.forEach(l => l.classList.remove('bg-paper', 'font-semibold'));
+            this.classList.add('bg-paper', 'font-semibold');
+        });
+    });
+
+    // Set first menu item as active on page load
+    if (menuLinks.length > 0) {
+        menuLinks[0].classList.add('bg-paper', 'font-semibold');
+    }
+});
+</script>
 @endsection
