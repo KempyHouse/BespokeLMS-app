@@ -192,7 +192,7 @@
                                             }
                                             $inheriting = old('inherit.'.$field['key'], $field['inheriting'] ? '1' : null) !== null;
                                         @endphp
-                                        <div class="rounded-control border border-line bg-paper p-4" data-brandkit-field data-key="{{ $field['key'] }}" data-type="{{ $field['type'] }}" data-default="{{ $field['default'] }}">
+                                        <div class="rounded-control border border-line bg-paper p-4" data-brandkit-field data-key="{{ $field['key'] }}" data-type="{{ $field['type'] }}" data-default="{{ $field['default'] }}" data-inherits-from="{{ $field['inherits_from'] ?? '' }}">
                                             <div class="flex items-start gap-3">
                                                 {{-- Swatch / shape preview --}}
                                                 @if ($isColor)
@@ -374,11 +374,24 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     var fields = Array.prototype.slice.call(document.querySelectorAll('[data-brandkit-field]'));
+    var fieldByKey = {};
+    fields.forEach(function (f) { fieldByKey[f.getAttribute('data-key')] = f; });
 
-    function effective(field) {
+    // Effective value of a field. In "Default" mode a field that inherits from
+    // another token adopts THAT token's live value (so editing the brand colour
+    // updates the button preview too); otherwise it uses its own default.
+    function effective(field, seen) {
         var inherit = field.querySelector('[data-brandkit-inherit]');
         var input = field.querySelector('[data-brandkit-input]');
-        return (inherit && inherit.checked) ? field.getAttribute('data-default') : (input ? input.value : '');
+        if (inherit && inherit.checked) {
+            var parentKey = field.getAttribute('data-inherits-from');
+            seen = seen || [];
+            if (parentKey && fieldByKey[parentKey] && seen.indexOf(parentKey) === -1) {
+                return effective(fieldByKey[parentKey], seen.concat(field.getAttribute('data-key')));
+            }
+            return field.getAttribute('data-default');
+        }
+        return input ? input.value : '';
     }
 
     function paintPreview() {

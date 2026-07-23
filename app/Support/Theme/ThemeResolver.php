@@ -24,7 +24,7 @@ use Throwable;
  */
 final class ThemeResolver
 {
-    private const CACHE_TOKENS = 'design_tokens.contract.v1';
+    private const CACHE_TOKENS = 'design_tokens.contract.v2';
     private const CACHE_TOKENS_TTL = 3600; // 1 hour
     private const CACHE_OVERRIDES_TTL = 600; // 10 minutes
 
@@ -78,9 +78,11 @@ final class ThemeResolver
                 }
             }
 
-            $light = [];
-            $dark = [];
-
+            // Pass 1: each token's own ("self") value = tenant override, else the
+            // platform default (light) / dark_value (dark), plus its metadata.
+            $meta = [];
+            $selfLight = [];
+            $selfDark = [];
             foreach ($contract as $token) {
                 $key = (string) ($token['key'] ?? '');
                 $cssVar = (string) ($token['css_var'] ?? '');
@@ -90,16 +92,47 @@ final class ThemeResolver
                 $themeable = (bool) ($token['themeable'] ?? false);
                 $default = $this->sanitiseValue((string) ($token['default_value'] ?? ''));
                 $darkValue = $this->sanitiseValue((string) ($token['dark_value'] ?? ''));
-                $tenant = ($themeable && isset($overrideByKey[$key])) ? $overrideByKey[$key] : null;
+                $hasOverride = $themeable && isset($overrideByKey[$key]);
+                $tenant = $hasOverride ? $overrideByKey[$key] : null;
 
-                $lightVal = $tenant ?? $default;
-                if ($lightVal !== '') {
-                    $light[$cssVar] = $lightVal;
+                $meta[$key] = [
+                    'cssVar' => $cssVar,
+                    'inherits' => (string) ($token['inherits_from'] ?? ''),
+                    'override' => $hasOverride,
+                ];
+                $selfLight[$key] = $tenant ?? $default;
+                $selfDark[$key] = $tenant ?? ($darkValue !== '' ? $darkValue : null);
+            }
+
+            // Pass 2: for a token with no override of its own, walk up the
+            // inherits_from chain to the first ancestor that is overridden or does
+            // not inherit, and adopt that ancestor's value (so e.g. the primary
+            // button follows the brand colour unless it is set explicitly).
+            $resolveKey = static function (string $key, array $self) use ($meta) {
+                $seen = [];
+                $cur = $key;
+                for ($i = 0; $i < 8 && isset($meta[$cur]) && ! isset($seen[$cur]); $i++) {
+                    $seen[$cur] = true;
+                    $m = $meta[$cur];
+                    if ($m['override'] || $m['inherits'] === '' || ! isset($meta[$m['inherits']])) {
+                        break;
+                    }
+                    $cur = $m['inherits'];
                 }
 
-                $darkVal = $tenant ?? ($darkValue !== '' ? $darkValue : null);
-                if ($darkVal !== null && $darkVal !== '') {
-                    $dark[$cssVar] = $darkVal;
+                return $self[$cur] ?? null;
+            };
+
+            $light = [];
+            $dark = [];
+            foreach ($meta as $key => $m) {
+                $lightVal = $resolveKey($key, $selfLight);
+                if (is_string($lightVal) && $lightVal !== '') {
+                    $light[$m['cssVar']] = $lightVal;
+                }
+                $darkVal = $resolveKey($key, $selfDark);
+                if (is_string($darkVal) && $darkVal !== '') {
+                    $dark[$m['cssVar']] = $darkVal;
                 }
             }
 

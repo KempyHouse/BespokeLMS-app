@@ -24,7 +24,7 @@ interface ReadsDesignTokens
      * text, and the `editor_group` a themeable token belongs to (null when the
      * token is not surfaced to tenants).
      *
-     * @return array<int,array{key:string,css_var:string,type:string,default_value:string,dark_value:?string,themeable:bool,category:?string,description:?string,label:?string,helper:?string,editor_group:?string}>
+     * @return array<int,array{key:string,css_var:string,type:string,default_value:string,dark_value:?string,themeable:bool,category:?string,description:?string,label:?string,helper:?string,editor_group:?string,inherits_from:?string}>
      *
      * @throws SupabaseAuthException
      */

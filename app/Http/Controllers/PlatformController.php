@@ -192,6 +192,36 @@ final class PlatformController extends Controller
             return null;
         }
 
+        // Effective value per token (tenant override, else platform default) and
+        // the inheritance map, so an inheriting token can adopt its source's value
+        // for its "Default" state (e.g. the primary button follows the brand).
+        $selfEffective = [];
+        $inheritsFrom = [];
+        $hasOwnOverride = [];
+        foreach ($tokens as $t) {
+            $k = (string) ($t['key'] ?? '');
+            if ($k === '') {
+                continue;
+            }
+            $ov = $overrides[$k] ?? null;
+            $selfEffective[$k] = $ov ?? (string) ($t['default_value'] ?? '');
+            $inheritsFrom[$k] = (string) ($t['inherits_from'] ?? '');
+            $hasOwnOverride[$k] = $ov !== null;
+        }
+        $resolveFrom = static function (string $start) use ($selfEffective, $inheritsFrom, $hasOwnOverride): string {
+            $seen = [];
+            $cur = $start;
+            for ($i = 0; $i < 8 && isset($selfEffective[$cur]) && ! isset($seen[$cur]); $i++) {
+                $seen[$cur] = true;
+                if (($hasOwnOverride[$cur] ?? false) || ($inheritsFrom[$cur] ?? '') === '' || ! isset($selfEffective[$inheritsFrom[$cur]])) {
+                    break;
+                }
+                $cur = $inheritsFrom[$cur];
+            }
+
+            return $selfEffective[$cur] ?? '';
+        };
+
         // The order the editor groups are presented in. Any themeable token
         // whose editor_group is not listed here (or is null) falls into "Other"
         // so nothing silently disappears from the editor.
@@ -204,8 +234,13 @@ final class PlatformController extends Controller
                 continue;
             }
             $key = (string) $token['key'];
-            $default = (string) ($token['default_value'] ?? '');
             $current = $overrides[$key] ?? null;
+            $inh = (string) ($token['inherits_from'] ?? '');
+            // The value shown in "Default" mode: the inherited source's effective
+            // value when this token inherits, otherwise its own platform default.
+            $default = ($inh !== '' && isset($selfEffective[$inh]))
+                ? $resolveFrom($inh)
+                : (string) ($token['default_value'] ?? '');
             $group = trim((string) ($token['editor_group'] ?? '')) ?: 'Other';
             $label = trim((string) ($token['label'] ?? '')) ?: trim((string) ($token['description'] ?? '')) ?: $key;
 
@@ -219,6 +254,7 @@ final class PlatformController extends Controller
                 'current' => $current,
                 'effective' => $current ?? $default,
                 'inheriting' => $current === null,
+                'inherits_from' => $inh,
             ];
 
             $fields[] = $field;
