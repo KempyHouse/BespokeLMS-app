@@ -388,3 +388,18 @@
         opacity: 1;
     }
 }
+
+@media (min-width: 1024px) {
+    /* Sticky left navigation rail: pinned just below the sticky header and
+       capped to the viewport, so it never overflows or lurches on vertical
+       scroll. When its content is taller than the screen it scrolls internally
+       instead of jumping when it reaches the end of the content column. */
+    .rail-sticky {
+        position: sticky;
+        top: 5rem;
+        align-self: flex-start;
+        max-height: calc(100vh - 6rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+    }
+}

@@ -6,7 +6,7 @@
 <div class="flex flex-col items-start gap-6 lg:flex-row lg:items-start lg:gap-8">
     {{-- Left rail: header comes from the layout; the rail holds only the
          workspace switcher for now. The Team workspace UI is migrated in here. --}}
-    <aside class="w-full lg:w-rail lg:flex-none lg:sticky lg:top-20 lg:self-start" aria-label="Team workspace navigation">
+    <aside class="w-full lg:w-rail lg:flex-none rail-sticky" aria-label="Team workspace navigation">
         <x-workspace-switcher active="team" />
     </aside>
 
