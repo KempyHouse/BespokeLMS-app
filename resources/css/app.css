@@ -335,4 +335,24 @@
         position: sticky;
         left: 0;
     }
+    /* Depth cue for horizontal scroll: a soft shadow cast to the right of the
+       frozen column, fading in only once the table is scrolled — so the second
+       column visibly slides underneath, mirroring a sticky header's drop shadow
+       on vertical scroll. */
+    .dt-freeze::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        right: 0;
+        width: 0.75rem;
+        transform: translateX(100%);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 200ms ease;
+        background: linear-gradient(to right, rgba(2, 8, 23, 0.16), rgba(2, 8, 23, 0));
+    }
+    [data-dt-scrolled] .dt-freeze::after {
+        opacity: 1;
+    }
 }

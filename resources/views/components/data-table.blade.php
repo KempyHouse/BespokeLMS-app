@@ -149,7 +149,7 @@
                 {{ $empty }}
             </div>
         @else
-            <div class="overflow-x-auto rounded-panel border border-line bg-surface shadow-panel">
+            <div class="overflow-x-auto rounded-panel border border-line bg-surface shadow-panel" data-dt-scroll>
                 <table class="w-full border-collapse text-left">
                     <caption class="sr-only">{{ $countNoun }} list</caption>
                     <thead>
@@ -505,6 +505,19 @@
             document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeMenu(); });
             window.addEventListener('scroll', function () { closeMenu(); }, true);
             window.addEventListener('resize', function () { closeMenu(); });
+
+            /* Frozen-column depth cue: flag the scroll container once it is
+               scrolled horizontally so the frozen checkbox column casts a shadow
+               over the content sliding beneath it. */
+            var scrollWrap = root.querySelector('[data-dt-scroll]');
+            if (scrollWrap) {
+                var syncScrolled = function () {
+                    if (scrollWrap.scrollLeft > 0) { scrollWrap.setAttribute('data-dt-scrolled', ''); }
+                    else { scrollWrap.removeAttribute('data-dt-scrolled'); }
+                };
+                scrollWrap.addEventListener('scroll', syncScrolled, { passive: true });
+                syncScrolled();
+            }
 
             apply();
         }
