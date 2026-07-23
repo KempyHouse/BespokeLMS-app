@@ -144,7 +144,7 @@
                     <thead>
                         <tr class="bg-paper">
                             @if ($selectable)
-                                <th scope="col" class="w-px whitespace-nowrap px-3 py-3">
+                                <th scope="col" class="dt-freeze z-20 w-px whitespace-nowrap border-r border-line bg-paper px-3 py-3">
                                     <input type="checkbox" data-dt-selectall aria-label="Select all rows on this page"
                                            class="h-4 w-4 rounded border-line text-teachhq focus:ring-teachhq">
                                 </th>
@@ -189,7 +189,7 @@
                                 @foreach (($row['filters'] ?? []) as $fk => $fv) data-filter-{{ $fk }}="{{ $fv }}" @endforeach
                                 @foreach ($sortAttrs as $sk => $sv) data-sort-{{ $sk }}="{{ $sv }}" @endforeach>
                                 @if ($selectable)
-                                    <td class="w-px whitespace-nowrap px-3 py-3" data-dt-nonav>
+                                    <td class="dt-freeze z-10 w-px whitespace-nowrap border-r border-line bg-inherit px-3 py-3" data-dt-nonav>
                                         <input type="checkbox" data-dt-select value="{{ $rowId }}" aria-label="Select row"
                                                class="h-4 w-4 rounded border-line text-teachhq focus:ring-teachhq">
                                     </td>

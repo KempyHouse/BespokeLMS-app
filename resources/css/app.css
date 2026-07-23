@@ -301,3 +301,20 @@
         transform: rotate(180deg);
     }
 }
+
+@layer components {
+    /* Data-table: base row background lives here (not as a utility) so the
+       hover / selected utilities on the row always win cleanly, and the frozen
+       checkbox column can pick up the row colour with `bg-inherit`. */
+    .dt-row {
+        background-color: var(--color-surface);
+    }
+    /* Frozen leading checkbox column — pinned to the left edge of the
+       horizontal scroll area, permanently visible. `bg-inherit` on the cell
+       inherits the row's current background (surface / paper on hover /
+       brand-soft when selected) so content never shows through. */
+    .dt-freeze {
+        position: sticky;
+        left: 0;
+    }
+}
