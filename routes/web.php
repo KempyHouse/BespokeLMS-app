@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AiIntegrationController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
@@ -70,5 +71,10 @@ Route::middleware('auth')->group(function (): void {
             // Save a tenant's brand kit (themeable design-token overrides).
             Route::put('tenants/{tenant}/branding', [PlatformController::class, 'updateBranding'])
                 ->name('tenants.branding.update');
+
+            // Owner-level AI & voice provider integrations (Claude, OpenAI,
+            // ElevenLabs, …), configured once and inherited by every tenant.
+            Route::get('ai', [AiIntegrationController::class, 'index'])->name('ai');
+            Route::put('ai/{integration}', [AiIntegrationController::class, 'update'])->name('ai.update');
         });
 });

@@ -346,6 +346,11 @@
                 <div class="mt-5 rounded-control border border-dashed border-line bg-paper p-5 text-sm text-ink-soft">
                     The AI integration is configured once at the platform-owner level and inherited by every tenant — it is not configured per tenant.
                 </div>
+                <a href="{{ route('platform.ai') }}"
+                   class="mt-3 inline-flex items-center gap-1.5 text-sm font-semibold text-teachhq transition hover:text-teachhq-dark focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq focus-visible:ring-offset-2">
+                    Open AI &amp; voice providers
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+                </a>
             </section>
         </div>
     </main>
