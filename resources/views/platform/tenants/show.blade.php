@@ -16,8 +16,7 @@
                     All tenants
                 </a>
                 <p class="mt-3 text-xs font-bold uppercase tracking-wider text-teachhq">{{ $tenant['type_label'] }} tenant</p>
-                <p class="mt-1 text-lg font-black text-slatecard">{{ $tenant['name'] }}</p>
-                <p class="mt-1 text-caption text-ink-soft">/{{ $tenant['slug'] }}</p>
+                <h1 class="mt-1 text-xl font-black text-slatecard">{{ $tenant['name'] }}</h1>
             </div>
 
             <nav aria-label="Tenant configuration sections">
@@ -36,8 +35,8 @@
                     @endphp
                     @foreach ($sections as $s)
                         <li>
-                            <a href="#{{ $s['id'] }}"
-                               class="flex items-center gap-2.5 border-b border-line py-2.5 text-sm font-medium text-slatecard transition hover:text-teachhq focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq focus-visible:ring-offset-2 {{ $loop->last ? 'border-b-0' : '' }}">
+                            <a href="#{{ $s['id'] }}" data-spy-link="{{ $s['id'] }}"
+                               class="spy-link flex items-center gap-2.5 border-b border-line py-2.5 text-sm font-medium text-slatecard transition hover:text-teachhq focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq focus-visible:ring-offset-2 {{ $loop->last ? 'border-b-0' : '' }}">
                                 <span class="min-w-0 flex-1 truncate">{{ $s['label'] }}</span>
                             </a>
                         </li>
@@ -50,17 +49,10 @@
     <!-- Main content -->
     <main class="min-w-0 flex-1">
         <!-- Header -->
-        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div class="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div class="min-w-0">
                 <p class="text-xs font-bold uppercase tracking-wider text-teachhq">BespokeLMS &middot; Tenant configuration</p>
-                <h1 class="mt-1 flex flex-wrap items-center gap-2.5 text-2xl font-black text-slatecard">
-                    {{ $tenant['name'] }}
-                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-micro font-bold {{ $tenant['is_operator'] ? 'bg-teachhq-soft text-teachhq-dark' : 'bg-line-soft text-ink-soft' }}">{{ $tenant['type_label'] }}</span>
-                    @if ($tenant['model_label'] !== '—')
-                        <span class="inline-flex items-center rounded-full border border-line bg-surface px-2 py-0.5 text-micro font-bold text-ink-muted">{{ $tenant['model_label'] }}</span>
-                    @endif
-                </h1>
-                <p class="mt-2 text-sm text-ink-soft">Configure this tenant's white-label LMS instance. All values are read from Supabase.</p>
+                <p class="mt-2 max-w-xl text-sm text-ink-soft">Configure this tenant's white-label LMS instance. All values are read from Supabase.</p>
             </div>
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center lg:flex-none">
                 <x-tenant-selector :tenants="$tenants" :current="$tenant['id']" label="Switch tenant" id="switch-tenant" />
@@ -325,6 +317,43 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         sync();
     });
+});
+</script>
+@endpush
+
+@push('scripts')
+<script>
+/* Scrollspy: highlight the configuration nav item whose section is in view. */
+document.addEventListener('DOMContentLoaded', function () {
+    var links = Array.prototype.slice.call(document.querySelectorAll('[data-spy-link]'));
+    if (!links.length || !('IntersectionObserver' in window)) return;
+    var sections = links
+        .map(function (l) { return document.getElementById(l.getAttribute('data-spy-link')); })
+        .filter(Boolean);
+
+    function setActive(id) {
+        links.forEach(function (l) {
+            var on = l.getAttribute('data-spy-link') === id;
+            l.classList.toggle('text-teachhq', on);
+            l.classList.toggle('font-semibold', on);
+            l.classList.toggle('text-slatecard', !on);
+            l.classList.toggle('font-medium', !on);
+            if (on) { l.setAttribute('aria-current', 'true'); } else { l.removeAttribute('aria-current'); }
+        });
+    }
+
+    var current = sections.length ? sections[0].id : null;
+    var observer = new IntersectionObserver(function (entries) {
+        var visible = entries.filter(function (e) { return e.isIntersecting; });
+        if (visible.length) {
+            visible.sort(function (a, b) { return a.boundingClientRect.top - b.boundingClientRect.top; });
+            current = visible[0].target.id;
+        }
+        if (current) setActive(current);
+    }, { rootMargin: '-25% 0px -65% 0px', threshold: 0 });
+
+    sections.forEach(function (s) { observer.observe(s); });
+    if (sections[0]) setActive(sections[0].id);
 });
 </script>
 @endpush
