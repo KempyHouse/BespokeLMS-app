@@ -10,6 +10,7 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseEditorController;
 use App\Http\Controllers\CourseContentController;
+use App\Http\Controllers\CourseWorkflowController;
 use App\Http\Controllers\CourseLibraryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailIntegrationController;
@@ -109,6 +110,9 @@ Route::middleware('auth')->group(function (): void {
             // Per-slide payload editor (image+text / video / document).
             Route::get('courses/{course}/content/slides/{slide}/edit', [CourseContentController::class, 'editSlide'])->name('courses.slides.edit');
             Route::put('courses/{course}/content/slides/{slide}', [CourseContentController::class, 'updateSlide'])->name('courses.slides.update');
+            // Editorial workflow & approval (migration 005).
+            Route::get('courses/{course}/workflow', [CourseWorkflowController::class, 'index'])->name('courses.workflow');
+            Route::post('courses/{course}/workflow/transition', [CourseWorkflowController::class, 'transition'])->name('courses.workflow.transition');
 
             // Widget Library — the dashboard widget catalogue: which roles may
             // add each widget, its status, and its default size. Saving requires

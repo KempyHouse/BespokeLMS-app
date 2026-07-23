@@ -19,6 +19,7 @@ use App\Support\Supabase\Contracts\WritesCoursePricing;
 use App\Support\Supabase\Contracts\WritesCourseAvailability;
 use App\Support\Supabase\Contracts\WritesCourseContent;
 use App\Support\Supabase\Contracts\WritesCourseVersion;
+use App\Support\Supabase\Contracts\WritesCourseWorkflow;
 use App\Support\Supabase\Contracts\WritesCourses;
 use App\Support\Supabase\Contracts\ReadsOrganizations;
 use App\Support\Supabase\Contracts\ReadsProfiles;
@@ -41,6 +42,7 @@ use App\Support\Supabase\SupabaseCoursePricingWriter;
 use App\Support\Supabase\SupabaseCourseAvailabilityWriter;
 use App\Support\Supabase\SupabaseCourseContentWriter;
 use App\Support\Supabase\SupabaseCourseVersionWriter;
+use App\Support\Supabase\SupabaseCourseWorkflowWriter;
 use App\Support\Supabase\SupabaseCoursesWriter;
 use App\Support\Supabase\SupabaseOrganizations;
 use App\Support\Supabase\SupabaseProfiles;
@@ -165,6 +167,18 @@ class AppServiceProvider extends ServiceProvider
             $config = $app['config']->get('services.supabase', []);
 
             return new SupabaseCourseVersionWriter(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+
+        $this->app->singleton(WritesCourseWorkflow::class, function (Application $app): SupabaseCourseWorkflowWriter {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseCourseWorkflowWriter(
                 $app->make(HttpFactory::class),
                 (string) ($config['url'] ?? ''),
                 (string) ($config['service_role_key'] ?? ''),
