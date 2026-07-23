@@ -105,6 +105,16 @@ window.__BESPOKE_USER__ = {$payload};
         }
     } catch (e) {}
 
+    // Deep-link support for the temporary footer references (MY-old / TEAM-old):
+    // ?ws=my|team|admin opens that workspace directly, when the role allows it.
+    try {
+        var params = new URLSearchParams(window.location.search);
+        var ws = params.get('ws');
+        if (ws && allowed[ws] && typeof window.switchWorkspace === 'function') {
+            window.switchWorkspace(ws);
+        }
+    } catch (e) {}
+
     // Replace the mock "Log out" with a real Laravel logout POST.
     window.profileLogout = function () {
         var form = document.createElement('form');
