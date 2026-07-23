@@ -71,7 +71,11 @@
             <div class="relative" data-account-menu>
                 <button type="button" aria-haspopup="menu" aria-expanded="false" data-account-toggle
                         class="flex items-center gap-2 rounded-full py-0.5 pl-0.5 pr-2 transition hover:bg-paper focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-1">
-                    <span class="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-teachhq text-sm font-bold text-on-brand" aria-hidden="true">{{ $hdrUser?->initials() ?? 'U' }}</span>
+                    @if ($hdrUser?->avatarUrl())
+                        <img src="{{ $hdrUser->avatarUrl() }}" alt="" class="h-9 w-9 flex-none rounded-full object-cover">
+                    @else
+                        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-teachhq text-sm font-bold text-on-brand" aria-hidden="true">{{ $hdrUser?->initials() ?? 'U' }}</span>
+                    @endif
                     <span class="hidden min-w-0 text-left sm:block">
                         <span class="block truncate text-sm font-semibold text-slatecard">{{ $hdrUser?->displayName() ?? 'Account' }}</span>
                         <span class="block truncate text-mini text-ink-soft">{{ $hdrUser?->roleLabel() }}</span>
@@ -81,27 +85,82 @@
 
                 <div role="menu" aria-label="Account menu" data-account-panel
                      class="absolute right-0 top-full z-50 mt-2 hidden w-menu rounded-panel border border-line bg-surface p-2 shadow-panel">
+                    {{-- Identity --}}
                     <div class="flex items-center gap-3 px-2.5 py-2">
-                        <span class="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-teachhq text-sm font-bold text-on-brand" aria-hidden="true">{{ $hdrUser?->initials() ?? 'U' }}</span>
+                        @if ($hdrUser?->avatarUrl())
+                            <img src="{{ $hdrUser->avatarUrl() }}" alt="" class="h-10 w-10 flex-none rounded-full object-cover">
+                        @else
+                            <span class="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-teachhq text-sm font-bold text-on-brand" aria-hidden="true">{{ $hdrUser?->initials() ?? 'U' }}</span>
+                        @endif
                         <div class="min-w-0">
                             <div class="truncate text-sm font-bold text-slatecard">{{ $hdrUser?->displayName() ?? 'Account' }}</div>
                             <div class="truncate text-mini text-ink-soft">{{ $hdrUser?->email }}</div>
-                            <span class="mt-1 inline-flex items-center rounded-full bg-teachhq-soft px-2 py-0.5 text-micro font-bold text-teachhq-dark">{{ $hdrUser?->roleLabel() }}</span>
+                            @if ($hdrUser?->roleLabel())
+                                <span class="mt-1 inline-flex items-center rounded-full bg-teachhq-soft px-2 py-0.5 text-micro font-bold text-teachhq-dark">{{ $hdrUser?->roleLabel() }}</span>
+                            @endif
                         </div>
                     </div>
+
                     <div class="my-1.5 h-px bg-line-soft"></div>
+
+                    {{-- Preferences --}}
+                    <div class="px-2.5 pb-1 pt-1 text-nano font-bold uppercase tracking-wider text-ink-faint">Preferences</div>
+                    <span class="flex w-full cursor-not-allowed items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-ink-faint" aria-disabled="true">
+                        <svg class="h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                        Personal preferences
+                        <span class="ml-auto rounded-full bg-line-soft px-1.5 py-0.5 text-nano font-semibold text-ink-soft">Soon</span>
+                    </span>
+                    <span class="flex w-full cursor-not-allowed items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-ink-faint" aria-disabled="true">
+                        <svg class="h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                        Notification settings
+                        <span class="ml-auto rounded-full bg-line-soft px-1.5 py-0.5 text-nano font-semibold text-ink-soft">Soon</span>
+                    </span>
+
+                    {{-- Theme (live) --}}
+                    <div class="px-2.5 py-2" data-theme-endpoint="{{ route('preferences.theme') }}">
+                        <div class="mb-1.5 flex items-center gap-2 text-nano font-bold uppercase tracking-wider text-ink-faint">
+                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+                            Theme
+                        </div>
+                        <div class="grid grid-cols-3 gap-1 rounded-control border border-line bg-paper p-1" role="group" aria-label="Theme preference">
+                            <button type="button" data-theme-set="light" class="theme-opt rounded-lg py-1.5 text-mini font-semibold text-ink-soft transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Light</button>
+                            <button type="button" data-theme-set="dark" class="theme-opt rounded-lg py-1.5 text-mini font-semibold text-ink-soft transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Dark</button>
+                            <button type="button" data-theme-set="system" class="theme-opt rounded-lg py-1.5 text-mini font-semibold text-ink-soft transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">System</button>
+                        </div>
+                    </div>
+
+                    <div class="my-1.5 h-px bg-line-soft"></div>
+
+                    {{-- Account --}}
+                    <div class="px-2.5 pb-1 pt-1 text-nano font-bold uppercase tracking-wider text-ink-faint">Account</div>
+                    <span class="flex w-full cursor-not-allowed items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-ink-faint" aria-disabled="true">
+                        <svg class="h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        My profile
+                        <span class="ml-auto rounded-full bg-line-soft px-1.5 py-0.5 text-nano font-semibold text-ink-soft">Soon</span>
+                    </span>
+                    <span class="flex w-full cursor-not-allowed items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-ink-faint" aria-disabled="true">
+                        <svg class="h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                        Security &amp; password
+                        <span class="ml-auto rounded-full bg-line-soft px-1.5 py-0.5 text-nano font-semibold text-ink-soft">Soon</span>
+                    </span>
                     <a href="{{ route('dashboard') }}" role="menuitem"
                        class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-slatecard transition hover:bg-paper focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">
                         <svg class="h-icon w-icon flex-none text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
                         Back to dashboard
                     </a>
+
+                    <div class="mt-1 flex items-center gap-2 px-2.5 py-1.5 text-mini text-ink-soft">
+                        <span class="h-2 w-2 flex-none rounded-full bg-rag-green" aria-hidden="true"></span>
+                        Signed in on this device
+                    </div>
+
                     <div class="my-1.5 h-px bg-line-soft"></div>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" role="menuitem"
                                 class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm font-medium text-slatecard transition hover:bg-rag-red-soft hover:text-rag-red focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">
                             <svg class="h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
-                            Sign out
+                            Log out
                         </button>
                     </form>
                 </div>
@@ -328,6 +387,58 @@
             if (e.key === 'Escape') { window.closeNotifications(); window.closeChat(); }
         });
     })();
+    </script>
+
+    <script>
+    /* Theme toggle (Light / Dark / System) in the account menu. Applies instantly
+       to <html data-theme>, reflects the active choice, and persists via the
+       preferences endpoint. The pre-paint script in <head> handles first render. */
+    document.addEventListener('DOMContentLoaded', function () {
+        var opts = Array.prototype.slice.call(document.querySelectorAll('[data-theme-set]'));
+        if (!opts.length) return;
+        var el = document.documentElement;
+        var wrap = document.querySelector('[data-theme-endpoint]');
+        var endpoint = wrap ? wrap.getAttribute('data-theme-endpoint') : null;
+        var mq = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+
+        function pref() { return el.getAttribute('data-theme-pref') || 'system'; }
+        function applyTheme() {
+            var p = pref();
+            var dark = p === 'dark' || (p === 'system' && mq && mq.matches);
+            el.setAttribute('data-theme', dark ? 'dark' : 'light');
+        }
+        function paint() {
+            var p = pref();
+            opts.forEach(function (b) {
+                var on = b.getAttribute('data-theme-set') === p;
+                b.classList.toggle('bg-surface', on);
+                b.classList.toggle('text-slatecard', on);
+                b.classList.toggle('shadow-quiet', on);
+                b.classList.toggle('text-ink-soft', !on);
+                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+        }
+        opts.forEach(function (b) {
+            b.addEventListener('click', function () {
+                var choice = b.getAttribute('data-theme-set');
+                el.setAttribute('data-theme-pref', choice);
+                applyTheme();
+                paint();
+                if (endpoint) {
+                    var m = document.querySelector('meta[name=csrf-token]');
+                    fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': m ? m.getAttribute('content') : '' },
+                        body: JSON.stringify({ theme: choice })
+                    }).catch(function () {});
+                }
+            });
+        });
+        if (mq && mq.addEventListener) {
+            mq.addEventListener('change', function () { if (pref() === 'system') applyTheme(); });
+        }
+        paint();
+    });
     </script>
 
     {{-- Page/component-pushed scripts (e.g. the reusable data-table behaviour). --}}
