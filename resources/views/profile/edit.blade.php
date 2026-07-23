@@ -115,6 +115,22 @@
             </div>
         </form>
     </section>
+
+    {{-- Preferences --}}
+    <section id="preferences" class="mt-6 scroll-mt-24 rounded-panel border border-line bg-surface p-6 shadow-panel">
+        <h2 class="text-lg font-black text-slatecard">Preferences</h2>
+        <p class="mt-1 text-caption text-ink-soft">How BespokeLMS looks for you. Applies instantly and is saved to your profile.</p>
+
+        <div class="mt-5" data-theme-endpoint="{{ route('preferences.theme') }}">
+            <span class="block text-sm font-semibold text-slatecard">Theme</span>
+            <p class="mt-0.5 text-mini text-ink-soft">"System" follows your device's light or dark setting.</p>
+            <div class="mt-2 grid max-w-md grid-cols-3 gap-1.5 rounded-control border border-line bg-paper p-1.5" role="group" aria-label="Theme preference">
+                <button type="button" data-theme-set="light" class="theme-opt rounded-lg py-2 text-sm font-semibold text-ink-soft transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Light</button>
+                <button type="button" data-theme-set="dark" class="theme-opt rounded-lg py-2 text-sm font-semibold text-ink-soft transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Dark</button>
+                <button type="button" data-theme-set="system" class="theme-opt rounded-lg py-2 text-sm font-semibold text-ink-soft transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">System</button>
+            </div>
+        </div>
+    </section>
 </div>
 
 {{-- Crop modal --}}
