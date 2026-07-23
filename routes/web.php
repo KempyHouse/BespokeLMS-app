@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CourseEditorController;
+use App\Http\Controllers\CourseContentController;
 use App\Http\Controllers\CourseLibraryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailIntegrationController;
@@ -100,6 +101,10 @@ Route::middleware('auth')->group(function (): void {
             // Course availability (territories) & author credits (migration 007).
             Route::get('courses/{course}/availability', [CourseEditorController::class, 'editAvailability'])->name('courses.availability');
             Route::put('courses/{course}/availability', [CourseEditorController::class, 'updateAvailability'])->name('courses.availability.update');
+            // Course content builder — draft version + module/lesson/slide outline (migration 003).
+            Route::get('courses/{course}/content', [CourseContentController::class, 'index'])->name('courses.content');
+            Route::post('courses/{course}/content/draft', [CourseContentController::class, 'createDraft'])->name('courses.content.draft');
+            Route::post('courses/{course}/content', [CourseContentController::class, 'handle'])->name('courses.content.action');
 
             // Widget Library — the dashboard widget catalogue: which roles may
             // add each widget, its status, and its default size. Saving requires
