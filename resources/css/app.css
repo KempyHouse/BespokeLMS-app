@@ -65,7 +65,7 @@
     --text-nano: 0.625rem;     /* 10px — eyebrow / category labels */
 
     /* Layout widths + icon sizing */
-    --spacing-rail: 18.75rem;  /* 300px — left navigation rail */
+    --spacing-rail: 15rem;  /* 240px — left navigation rail (trimmed to give data tables more width) */
     --spacing-search: 30rem;   /* 480px — header search field */
     --spacing-menu: 17.5rem;   /* 280px — account dropdown */
     --spacing-icon: 1.125rem;  /* 18px — inline nav/action icons */
