@@ -59,7 +59,7 @@ final class PlatformController extends Controller
         // First pass: split rows by role and index client orgs under their operator.
         foreach ($rows as $row) {
             $type = (string) ($row['type'] ?? '');
-            $users = (int) ($row['profiles'][0]['count'] ?? 0);
+            $users = (int) ($row['user_count'] ?? 0);
 
             if ($type === 'client') {
                 $parentId = (string) ($row['parent_id'] ?? '');
@@ -82,7 +82,7 @@ final class PlatformController extends Controller
             }
 
             $id = (string) ($row['id'] ?? '');
-            $users = (int) ($row['profiles'][0]['count'] ?? 0);
+            $users = (int) ($row['user_count'] ?? 0);
             $clients = $clientsByParent[$id] ?? [];
             $userTotal += $users;
 
