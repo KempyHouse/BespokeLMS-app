@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\ConfirmPasswordController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CourseEditorController;
 use App\Http\Controllers\CourseLibraryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailIntegrationController;
@@ -16,6 +17,7 @@ use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\PreferencesController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TeamWorkspaceController;
+use App\Http\Controllers\WidgetLibraryController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -50,7 +52,9 @@ Route::middleware('auth')->group(function (): void {
     // Rebuilt workspace shells — blank scaffolds being migrated off the
     // frozen prototype. Any authenticated user may load the shell; Supabase
     // RLS governs whatever tenant data the pages eventually read.
-    Route::get('my', MyWorkspaceController::class)->name('my.home');
+    Route::get('my', [MyWorkspaceController::class, 'index'])->name('my.home');
+    // Save the signed-in user's configurable dashboard layout (widgets + order + size).
+    Route::post('my/dashboard', [MyWorkspaceController::class, 'save'])->name('my.dashboard.save');
     // Learner Course Library — the browsable catalogue on the My workspace.
     Route::get('my/courses', [CourseLibraryController::class, 'index'])->name('my.courses');
     Route::get('my/courses/{course}', [CourseLibraryController::class, 'show'])->name('my.courses.show');
@@ -88,6 +92,20 @@ Route::middleware('auth')->group(function (): void {
             Route::get('courses', [CourseController::class, 'index'])->name('courses');
             // Course workspace — read-only drill-in for one course.
             Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+            // Save the course-details editor (catalogue/marketing/commercial fields).
+            Route::put('courses/{course}', [CourseController::class, 'update'])->name('courses.update');
+            // Course pricing & retake/retry policy editor (migration 007).
+            Route::get('courses/{course}/pricing', [CourseEditorController::class, 'editPricing'])->name('courses.pricing');
+            Route::put('courses/{course}/pricing', [CourseEditorController::class, 'updatePricing'])->name('courses.pricing.update');
+
+            // Widget Library — the dashboard widget catalogue: which roles may
+            // add each widget, its status, and its default size. Saving requires
+            // step-up ("sudo") re-authentication.
+            Route::get('widgets', [WidgetLibraryController::class, 'index'])->name('widgets');
+            Route::get('widgets/{widget}', [WidgetLibraryController::class, 'show'])->name('widgets.show');
+            Route::put('widgets/{widget}', [WidgetLibraryController::class, 'update'])
+                ->middleware('platform.sudo')
+                ->name('widgets.update');
 
             // Per-tenant admin console (configuration hub). {tenant} is an
             // organisation UUID; the controller 404s an unknown id.

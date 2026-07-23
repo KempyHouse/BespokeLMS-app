@@ -15,6 +15,8 @@ use App\Support\Supabase\Contracts\ReadsCourses;
 use App\Support\Supabase\Contracts\ReadsDesignTokens;
 use App\Support\Supabase\Contracts\ReadsEmailIntegrations;
 use App\Support\Supabase\Contracts\ReadsLearnerCatalogue;
+use App\Support\Supabase\Contracts\WritesCoursePricing;
+use App\Support\Supabase\Contracts\WritesCourses;
 use App\Support\Supabase\Contracts\ReadsOrganizations;
 use App\Support\Supabase\Contracts\ReadsProfiles;
 use App\Support\Supabase\Contracts\ReadsTenantEmailAliases;
@@ -32,10 +34,17 @@ use App\Support\Supabase\SupabaseCourses;
 use App\Support\Supabase\SupabaseDesignTokens;
 use App\Support\Supabase\SupabaseEmailIntegrations;
 use App\Support\Supabase\SupabaseLearnerCatalogue;
+use App\Support\Supabase\SupabaseCoursePricingWriter;
+use App\Support\Supabase\SupabaseCoursesWriter;
 use App\Support\Supabase\SupabaseOrganizations;
 use App\Support\Supabase\SupabaseProfiles;
 use App\Support\Supabase\SupabaseProfilesWriter;
 use App\Support\Supabase\SupabaseTenantEmailAliases;
+use App\Support\Supabase\Contracts\ReadsDashboards;
+use App\Support\Supabase\Contracts\ReadsWidgetData;
+use App\Support\Supabase\Contracts\WritesDashboards;
+use App\Support\Supabase\SupabaseDashboards;
+use App\Support\Supabase\SupabaseWidgetData;
 use App\Support\Theme\ThemeResolver;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Foundation\Application;
@@ -90,6 +99,30 @@ class AppServiceProvider extends ServiceProvider
             $config = $app['config']->get('services.supabase', []);
 
             return new SupabaseCourses(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+
+        $this->app->singleton(WritesCourses::class, function (Application $app): SupabaseCoursesWriter {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseCoursesWriter(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+
+        $this->app->singleton(WritesCoursePricing::class, function (Application $app): SupabaseCoursePricingWriter {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseCoursePricingWriter(
                 $app->make(HttpFactory::class),
                 (string) ($config['url'] ?? ''),
                 (string) ($config['service_role_key'] ?? ''),
@@ -238,6 +271,35 @@ class AppServiceProvider extends ServiceProvider
             $config = $app['config']->get('services.supabase', []);
 
             return new SupabaseProfilesWriter(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+
+        // Dashboard widget library + per-user dashboards (service-role). One
+        // client implements both the registry read and the layout/registry
+        // writes; a second reads the raw rows the widgets are computed from.
+        $this->app->singleton(SupabaseDashboards::class, function (Application $app): SupabaseDashboards {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseDashboards(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+        $this->app->bind(ReadsDashboards::class, SupabaseDashboards::class);
+        $this->app->bind(WritesDashboards::class, SupabaseDashboards::class);
+
+        $this->app->singleton(ReadsWidgetData::class, function (Application $app): SupabaseWidgetData {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseWidgetData(
                 $app->make(HttpFactory::class),
                 (string) ($config['url'] ?? ''),
                 (string) ($config['service_role_key'] ?? ''),

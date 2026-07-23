@@ -38,6 +38,12 @@ final class SupabaseCourses implements ReadsCourses
      */
     private const COURSE_SELECT_LEGACY = 'id,title,catalog_status,owner_org_id,category_id,created_at';
 
+    /**
+     * The richer column set the course workspace + editor need (migration 003
+     * + 007 fields). Only used by find(); the list view keeps the lean select.
+     */
+    private const COURSE_SELECT_DETAIL = 'id,title,content_type,catalog_status,owner_org_id,category_id,current_published_version_id,created_at,updated_at,description,level,duration_min,accreditation,cpd_points,cpd_body,issues_certificate,certificate_validity,hero_image_path,hero_image_alt,meta_title,meta_description';
+
     public function __construct(
         private readonly HttpFactory $http,
         private readonly string $url,
@@ -183,7 +189,7 @@ final class SupabaseCourses implements ReadsCourses
     {
         try {
             $response = $this->request()->get('/rest/v1/courses', [
-                'select' => self::COURSE_SELECT.',description',
+                'select' => self::COURSE_SELECT_DETAIL,
                 'id' => 'eq.'.$courseId,
             ]);
         } catch (ConnectionException $e) {
@@ -265,6 +271,17 @@ final class SupabaseCourses implements ReadsCourses
         $rows = $legacy->json() ?? [];
 
         return $rows;
+    }
+
+    /**
+     * All course categories as id => name, for the editor's category picker.
+     * Best-effort: an unreachable table yields an empty list.
+     *
+     * @return array<string,string>
+     */
+    public function categories(): array
+    {
+        return $this->categoryNames();
     }
 
     /**

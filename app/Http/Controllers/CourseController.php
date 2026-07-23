@@ -7,7 +7,11 @@ namespace App\Http\Controllers;
 use App\Auth\SupabaseUser;
 use App\Support\Supabase\Contracts\ReadsCourses;
 use App\Support\Supabase\Contracts\ReadsOrganizations;
+use App\Http\Requests\UpdateCourseRequest;
+use App\Support\Supabase\Contracts\WritesAuditLog;
+use App\Support\Supabase\Contracts\WritesCourses;
 use App\Support\Supabase\Exceptions\SupabaseAuthException;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
@@ -86,9 +90,21 @@ final class CourseController extends Controller
             abort(404);
         }
 
+        $categoryOptions = [];
+        try {
+            $categories = $courses->categories();
+            asort($categories);
+            foreach ($categories as $catId => $catName) {
+                $categoryOptions[] = ['value' => (string) $catId, 'label' => (string) $catName];
+            }
+        } catch (SupabaseAuthException) {
+            $categoryOptions = [];
+        }
+
         return view('platform.courses.show', [
             'user' => $user,
             'course' => $this->buildCourseDetail($row, $this->ownerNames($organizations)),
+            'categoryOptions' => $categoryOptions,
         ]);
     }
 
@@ -115,6 +131,104 @@ final class CourseController extends Controller
         }
 
         return $names;
+    }
+
+    /**
+     * Save the course-details editor form (catalogue / marketing / commercial
+     * fields on `courses`). Owner-gated at the route; validated by
+     * {@see UpdateCourseRequest}; written with the service-role key.
+     */
+    public function update(UpdateCourseRequest $request, WritesCourses $courses, WritesAuditLog $audit, string $course): RedirectResponse
+    {
+        $v = $request->validated();
+
+        $fields = [
+            'title' => (string) $v['title'],
+            'category_id' => ($v['category_id'] ?? null) !== null && $v['category_id'] !== '' ? (string) $v['category_id'] : null,
+            'content_type' => (string) $v['content_type'],
+            'catalog_status' => (string) $v['catalog_status'],
+            'level' => $this->nullableString($v['level'] ?? null),
+            'duration_min' => ($v['duration_min'] ?? null) !== null && $v['duration_min'] !== '' ? (int) $v['duration_min'] : null,
+            'description' => $this->nullableString($v['description'] ?? null),
+            'accreditation' => $this->nullableString($v['accreditation'] ?? null),
+            'cpd_points' => ($v['cpd_points'] ?? null) !== null && $v['cpd_points'] !== '' ? (float) $v['cpd_points'] : null,
+            'cpd_body' => $this->nullableString($v['cpd_body'] ?? null),
+            'issues_certificate' => $request->boolean('issues_certificate'),
+            'certificate_validity' => $this->monthsToInterval($v['certificate_validity_months'] ?? null),
+            'hero_image_path' => $this->nullableString($v['hero_image_path'] ?? null),
+            'hero_image_alt' => $this->nullableString($v['hero_image_alt'] ?? null),
+            'meta_title' => $this->nullableString($v['meta_title'] ?? null),
+            'meta_description' => $this->nullableString($v['meta_description'] ?? null),
+        ];
+
+        try {
+            $courses->updateDetails($course, $fields);
+        } catch (SupabaseAuthException $e) {
+            report($e);
+
+            return redirect()->route('platform.courses.show', $course)
+                ->withFragment('overview')
+                ->with('courseError', 'The course could not be saved right now. Please try again shortly.');
+        }
+
+        /** @var SupabaseUser $user */
+        $user = $request->user();
+        $audit->record(
+            action: 'course.updated',
+            actorId: $user->profileId,
+            organizationId: $user->organizationId,
+            entity: 'course',
+            entityId: $course,
+            meta: ['fields_changed' => count($fields)],
+        );
+
+        return redirect()->route('platform.courses.show', $course)
+            ->withFragment('overview')
+            ->with('status', 'Course details saved.');
+    }
+
+    /** Trim a string input to null when empty. */
+    private function nullableString(mixed $value): ?string
+    {
+        $value = is_string($value) ? trim($value) : $value;
+
+        return ($value === null || $value === '') ? null : (string) $value;
+    }
+
+    /** Months (int) -> a Postgres interval string, or null (0 = never expires). */
+    private function monthsToInterval(mixed $months): ?string
+    {
+        if ($months === null || $months === '') {
+            return null;
+        }
+        $m = (int) $months;
+
+        return $m > 0 ? $m.' months' : null;
+    }
+
+    /** Best-effort parse a Postgres interval text (e.g. "1 year 6 mons") to whole months. */
+    private function intervalToMonths(mixed $raw): ?int
+    {
+        if (! is_string($raw) || trim($raw) === '') {
+            return null;
+        }
+
+        $months = 0;
+        $matched = false;
+        if (preg_match('/(\\d+)\\s*year/i', $raw, $mm)) {
+            $months += ((int) $mm[1]) * 12;
+            $matched = true;
+        }
+        if (preg_match('/(\\d+)\\s*mon/i', $raw, $mm)) {
+            $months += (int) $mm[1];
+            $matched = true;
+        }
+        if (! $matched && preg_match('/(\\d+)\\s*day/i', $raw, $mm)) {
+            $months = (int) round(((int) $mm[1]) / 30);
+            $matched = true;
+        }
+
+        return $matched ? $months : null;
     }
 
     /**
@@ -254,6 +368,18 @@ final class CourseController extends Controller
             'id' => (string) ($c['id'] ?? ''),
             'title' => (string) ($c['title'] ?? ''),
             'description' => ($c['description'] ?? null) !== null ? (string) $c['description'] : null,
+            'category_id' => ($c['category_id'] ?? null) !== null ? (string) $c['category_id'] : null,
+            'level' => ($c['level'] ?? null) !== null ? (string) $c['level'] : null,
+            'duration_min' => ($c['duration_min'] ?? null) !== null ? (int) $c['duration_min'] : null,
+            'accreditation' => ($c['accreditation'] ?? null) !== null ? (string) $c['accreditation'] : null,
+            'cpd_points' => ($c['cpd_points'] ?? null) !== null ? (string) $c['cpd_points'] : null,
+            'cpd_body' => ($c['cpd_body'] ?? null) !== null ? (string) $c['cpd_body'] : null,
+            'issues_certificate' => (bool) ($c['issues_certificate'] ?? true),
+            'certificate_validity_months' => $this->intervalToMonths($c['certificate_validity'] ?? null),
+            'hero_image_path' => ($c['hero_image_path'] ?? null) !== null ? (string) $c['hero_image_path'] : null,
+            'hero_image_alt' => ($c['hero_image_alt'] ?? null) !== null ? (string) $c['hero_image_alt'] : null,
+            'meta_title' => ($c['meta_title'] ?? null) !== null ? (string) $c['meta_title'] : null,
+            'meta_description' => ($c['meta_description'] ?? null) !== null ? (string) $c['meta_description'] : null,
             'slug' => (string) ($c['slug'] ?? ''),
             'owner_name' => $ownerIsPlatform ? 'Platform' : ($ownerNames[(string) $ownerOrgId] ?? 'Operator'),
             'owner_is_platform' => $ownerIsPlatform,

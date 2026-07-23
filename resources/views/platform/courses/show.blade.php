@@ -43,6 +43,7 @@
                 ] as [$anchor, $label])
                     <a href="#{{ $anchor }}" class="rounded-control px-2 py-1.5 font-medium text-slatecard transition hover:bg-surface hover:text-teachhq focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">{{ $label }}</a>
                 @endforeach
+                <a href="{{ route('platform.courses.pricing', $course['id']) }}" class="rounded-control px-2 py-1.5 font-medium text-slatecard transition hover:bg-surface hover:text-teachhq focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Pricing &amp; retakes</a>
             </nav>
         </div>
     </aside>
@@ -55,25 +56,152 @@
                 <h2 class="mt-1 text-2xl font-black text-slatecard">{{ $course['title'] }}</h2>
                 <p class="mt-1 text-sm text-ink-soft">Owned by {{ $course['owner_name'] }}@if ($course['category']) &middot; {{ $course['category'] }}@endif</p>
             </div>
-            <button type="button" disabled
-                    class="inline-flex flex-none items-center gap-1.5 rounded-control bg-button-primary px-4 py-2 text-sm font-semibold text-button-primary-text opacity-60"
-                    title="Course editing arrives in a later slice">
-                Edit course (coming soon)
-            </button>
+            <a href="#overview"
+               class="inline-flex flex-none items-center gap-1.5 rounded-control bg-button-primary px-4 py-2 text-sm font-semibold text-button-primary-text transition hover:bg-button-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq focus-visible:ring-offset-1">
+                <svg class="h-icon w-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                Edit details
+            </a>
         </div>
 
-        {{-- Overview --}}
+        {{-- Course details (editable) --}}
+        @php
+            $inCls = 'w-full rounded-control border border-line bg-surface px-3 py-2 text-sm text-slatecard focus:outline-none focus:ring-2 focus:ring-teachhq';
+            $lblCls = 'mb-1 block text-micro font-semibold uppercase tracking-wide text-ink-faint';
+        @endphp
         <section id="overview" class="mb-6 scroll-mt-24 rounded-panel border border-line bg-surface p-6 shadow-panel">
-            <h3 class="text-lg font-black text-slatecard">Overview</h3>
-            @if ($course['description'])
-                <p class="mt-2 max-w-2xl text-sm text-ink-soft">{{ $course['description'] }}</p>
+            <div class="flex items-center justify-between gap-3">
+                <h3 class="text-lg font-black text-slatecard">Course details</h3>
+                <span class="text-mini text-ink-faint">Catalogue &amp; certification</span>
+            </div>
+
+            @if (session('status'))
+                <div class="mt-4 rounded-control border border-line bg-rag-green-soft px-4 py-2.5 text-sm font-medium text-rag-green" role="status">{{ session('status') }}</div>
             @endif
-            <dl class="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
+            @if (session('courseError'))
+                <div class="mt-4 rounded-control border border-line bg-rag-red-soft px-4 py-2.5 text-sm font-medium text-rag-red" role="alert">{{ session('courseError') }}</div>
+            @endif
+            @if ($errors->any())
+                <div class="mt-4 rounded-control border border-line bg-rag-red-soft px-4 py-2.5 text-sm text-rag-red" role="alert">Please correct the highlighted fields and save again.</div>
+            @endif
+
+            <form method="POST" action="{{ route('platform.courses.update', $course['id']) }}" class="mt-5 space-y-5">
+                @csrf
+                @method('PUT')
+
+                <div>
+                    <label for="f-title" class="{{ $lblCls }}">Title</label>
+                    <input id="f-title" name="title" type="text" required value="{{ old('title', $course['title']) }}" class="{{ $inCls }} @error('title') border-rag-red @enderror">
+                    @error('title') <p class="mt-1 text-mini text-rag-red">{{ $message }}</p> @enderror
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <div>
+                        <label for="f-category" class="{{ $lblCls }}">Category</label>
+                        <select id="f-category" name="category_id" class="{{ $inCls }}">
+                            <option value="">&mdash; None &mdash;</option>
+                            @foreach ($categoryOptions as $opt)
+                                <option value="{{ $opt['value'] }}" @selected(old('category_id', $course['category_id']) === $opt['value'])>{{ $opt['label'] }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="f-status" class="{{ $lblCls }}">Status</label>
+                        <select id="f-status" name="catalog_status" class="{{ $inCls }}">
+                            @foreach (['published' => 'Published', 'coming_soon' => 'Coming soon', 'retired' => 'Retired'] as $val => $label)
+                                <option value="{{ $val }}" @selected(old('catalog_status', $course['status']) === $val)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label for="f-type" class="{{ $lblCls }}">Content type</label>
+                        <select id="f-type" name="content_type" class="{{ $inCls }}">
+                            @foreach (['native' => 'Native', 'scorm' => 'SCORM', 'mixed' => 'Mixed'] as $val => $label)
+                                <option value="{{ $val }}" @selected(old('content_type', $course['type']) === $val)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-3">
+                    <div>
+                        <label for="f-level" class="{{ $lblCls }}">Level</label>
+                        <input id="f-level" name="level" type="text" value="{{ old('level', $course['level']) }}" placeholder="e.g. Level 2" class="{{ $inCls }}">
+                    </div>
+                    <div>
+                        <label for="f-duration" class="{{ $lblCls }}">Duration (minutes)</label>
+                        <input id="f-duration" name="duration_min" type="number" min="0" value="{{ old('duration_min', $course['duration_min']) }}" class="{{ $inCls }}">
+                    </div>
+                    <div>
+                        <label for="f-cpd" class="{{ $lblCls }}">CPD points</label>
+                        <input id="f-cpd" name="cpd_points" type="number" min="0" step="0.5" value="{{ old('cpd_points', $course['cpd_points']) }}" class="{{ $inCls }}">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="f-description" class="{{ $lblCls }}">Description</label>
+                    <textarea id="f-description" name="description" rows="3" class="{{ $inCls }}">{{ old('description', $course['description']) }}</textarea>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="f-accred" class="{{ $lblCls }}">Accreditation</label>
+                        <input id="f-accred" name="accreditation" type="text" value="{{ old('accreditation', $course['accreditation']) }}" placeholder="e.g. RSPH &amp; CIEH mapped" class="{{ $inCls }}">
+                    </div>
+                    <div>
+                        <label for="f-cpdbody" class="{{ $lblCls }}">CPD body</label>
+                        <input id="f-cpdbody" name="cpd_body" type="text" value="{{ old('cpd_body', $course['cpd_body']) }}" placeholder="e.g. The CPD Certification Service" class="{{ $inCls }}">
+                    </div>
+                </div>
+
+                <div class="grid gap-4 rounded-control border border-line bg-paper p-4 sm:grid-cols-3 sm:items-center">
+                    <label class="flex items-center gap-2.5 text-sm font-medium text-slatecard">
+                        <input name="issues_certificate" type="checkbox" value="1" @checked(old('issues_certificate', $course['issues_certificate'])) class="h-4 w-4 rounded border-line text-teachhq focus:ring-teachhq">
+                        Issues a certificate
+                    </label>
+                    <div class="sm:col-span-2">
+                        <label for="f-validity" class="{{ $lblCls }}">Certificate validity (months, 0 = never expires)</label>
+                        <input id="f-validity" name="certificate_validity_months" type="number" min="0" value="{{ old('certificate_validity_months', $course['certificate_validity_months']) }}" class="{{ $inCls }}">
+                    </div>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="f-hero" class="{{ $lblCls }}">Hero image path</label>
+                        <input id="f-hero" name="hero_image_path" type="text" value="{{ old('hero_image_path', $course['hero_image_path']) }}" placeholder="course-covers/&hellip; or full URL" class="{{ $inCls }}">
+                    </div>
+                    <div>
+                        <label for="f-heroalt" class="{{ $lblCls }}">Hero image alt text</label>
+                        <input id="f-heroalt" name="hero_image_alt" type="text" value="{{ old('hero_image_alt', $course['hero_image_alt']) }}" class="{{ $inCls }}">
+                    </div>
+                </div>
+
+                <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                        <label for="f-metatitle" class="{{ $lblCls }}">Meta title (SEO)</label>
+                        <input id="f-metatitle" name="meta_title" type="text" value="{{ old('meta_title', $course['meta_title']) }}" class="{{ $inCls }}">
+                    </div>
+                    <div>
+                        <label for="f-metadesc" class="{{ $lblCls }}">Meta description (SEO)</label>
+                        <textarea id="f-metadesc" name="meta_description" rows="2" class="{{ $inCls }}">{{ old('meta_description', $course['meta_description']) }}</textarea>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3 border-t border-line-soft pt-4">
+                    <button type="submit" class="inline-flex items-center gap-1.5 rounded-control bg-button-primary px-4 py-2 text-sm font-semibold text-button-primary-text transition hover:bg-button-primary-hover focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq focus-visible:ring-offset-1">
+                        <svg class="h-icon w-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg>
+                        Save details
+                    </button>
+                    <a href="{{ route('platform.courses') }}" class="text-sm font-semibold text-ink-soft transition hover:text-slatecard">Cancel</a>
+                </div>
+            </form>
+        </section>
+
+        {{-- At a glance (read-only) --}}
+        <section class="mb-6 rounded-panel border border-line bg-surface p-6 shadow-panel">
+            <h3 class="text-lg font-black text-slatecard">At a glance</h3>
+            <dl class="mt-4 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
                 @foreach ([
                     ['Owner', $course['owner_name']],
-                    ['Category', $course['category'] ?? '—'],
-                    ['Type', $course['type_label']],
-                    ['Status', $course['status_label']],
                     ['Current version', $course['current_version'] ?? '—'],
                     ['Workflow', $course['workflow_state'] ?? '—'],
                     ['Review due', $course['review_due_label']],
@@ -163,7 +291,7 @@
             </p>
         </section>
 
-        <p class="mt-2 text-mini text-ink-faint">This workspace is read-only for now — it reads the course model from migrations 003–006. Editing, the content builder, voiceover and taxonomy management arrive in later slices.</p>
+        <p class="mt-2 text-mini text-ink-faint">Course details are editable above. The version content builder, language editor, workflow actions and visibility/entitlement management arrive in the next editor slices.</p>
     </main>
 </div>
 @endsection

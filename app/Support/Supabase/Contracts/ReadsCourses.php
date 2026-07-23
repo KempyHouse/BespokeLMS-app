@@ -40,4 +40,13 @@ interface ReadsCourses
      * @throws SupabaseAuthException
      */
     public function find(string $courseId): ?array;
+
+    /**
+     * All course categories as id => name (for the editor's category picker).
+     *
+     * @return array<string,string>
+     *
+     * @throws SupabaseAuthException
+     */
+    public function categories(): array;
 }
