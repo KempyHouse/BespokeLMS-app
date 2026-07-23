@@ -139,50 +139,104 @@
                         </div>
                     @endif
 
-                    <form method="POST" action="{{ route('platform.tenants.branding.update', $tenant['id']) }}" class="mt-5" data-brandkit-form>
+                    @php
+                        // Effective value lookup for the live preview seed.
+                        $bkByKey = [];
+                        foreach ($branding['fields'] as $bf) { $bkByKey[$bf['key']] = $bf['effective']; }
+                        $bkVal = fn (string $k, string $fallback = '') => $bkByKey[$k] ?? $fallback;
+                    @endphp
+                    <form method="POST" action="{{ route('platform.tenants.branding.update', $tenant['id']) }}" class="mt-6" data-brandkit-form>
                         @csrf
                         @method('PUT')
-                        <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                            @foreach ($branding['fields'] as $field)
-                                @php
-                                    $isColor = $field['type'] === 'color';
-                                    $eff = $field['effective'];
-                                    // Native colour inputs need #rrggbb; expand #rgb.
-                                    $colorVal = $eff;
-                                    if ($isColor && preg_match('/^#([0-9a-fA-F]{3})$/', $eff, $m)) {
-                                        $colorVal = '#'.$m[1][0].$m[1][0].$m[1][1].$m[1][1].$m[1][2].$m[1][2];
-                                    }
-                                    $inheriting = old('inherit.'.$field['key'], $field['inheriting'] ? '1' : null) !== null;
-                                @endphp
-                                <div class="rounded-control border border-line bg-paper p-4" data-brandkit-field>
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="min-w-0">
-                                            <label for="bk-{{ $field['key'] }}" class="block text-sm font-semibold text-slatecard">{{ $field['label'] }}</label>
-                                            <span class="mt-0.5 block font-mono text-micro text-ink-faint">{{ $field['css_var'] }}</span>
-                                        </div>
-                                        <label class="flex flex-none items-center gap-1.5 text-mini font-medium text-ink-soft">
-                                            <input type="checkbox" name="inherit[{{ $field['key'] }}]" value="1" data-brandkit-inherit @checked($inheriting)
-                                                   class="h-4 w-4 rounded border-line text-teachhq focus:ring-teachhq">
-                                            Inherit default
-                                        </label>
-                                    </div>
-                                    <div class="mt-3 flex items-center gap-3">
-                                        @if ($isColor)
-                                            <input type="color" id="bk-{{ $field['key'] }}" name="tokens[{{ $field['key'] }}]"
-                                                   value="{{ old('tokens.'.$field['key'], $colorVal) }}" data-brandkit-input
-                                                   class="h-9 w-12 flex-none cursor-pointer rounded-control border border-line bg-surface p-1">
-                                            <span class="font-mono text-caption text-ink-soft">{{ old('tokens.'.$field['key'], $colorVal) }}</span>
-                                        @else
-                                            <input type="text" id="bk-{{ $field['key'] }}" name="tokens[{{ $field['key'] }}]"
-                                                   value="{{ old('tokens.'.$field['key'], $field['current']) }}" placeholder="{{ $field['default'] }}" data-brandkit-input
-                                                   class="w-full rounded-control border border-line bg-surface px-3 py-2 text-sm text-slatecard placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-teachhq">
-                                        @endif
-                                        <span class="ml-auto text-micro text-ink-faint">default {{ $field['default'] }}</span>
+
+                        {{-- Live preview: reflects pending edits before anything is saved. --}}
+                        <div class="mb-6 overflow-hidden rounded-panel border border-line">
+                            <div class="flex items-center justify-between border-b border-line bg-surface px-4 py-2">
+                                <span class="text-mini font-bold uppercase tracking-wide text-ink-faint">Live preview</span>
+                                <span class="text-micro text-ink-faint">Updates as you edit — not saved yet</span>
+                            </div>
+                            <div data-brandkit-preview class="p-6 transition-colors"
+                                 style="background: {{ $bkVal('color-paper', '#f4f2ef') }};
+                                        --bk-head: {{ $bkVal('color-slatecard', '#3d515b') }};
+                                        --bk-link: {{ $bkVal('color-brand-primary', '#009de1') }};
+                                        --bk-btn: {{ $bkVal('color-button-primary', '#009de1') }};
+                                        --bk-btnh: {{ $bkVal('color-button-primary-hover', '#007bb1') }};
+                                        --bk-btnt: {{ $bkVal('color-button-primary-text', '#ffffff') }};
+                                        --bk-rc: {{ $bkVal('radius-control', '0.85rem') }};
+                                        --bk-rp: {{ $bkVal('radius-panel', '1.1rem') }};">
+                                <div class="mx-auto max-w-md bg-white p-5 shadow-panel" style="border-radius: var(--bk-rp);">
+                                    <p class="text-base font-black" style="color: var(--bk-head);">Your brand, applied</p>
+                                    <p class="mt-1 text-caption text-ink-soft">This card previews the tenant's page background, heading colour, button and link using the values below.</p>
+                                    <div class="mt-4 flex items-center gap-3">
+                                        <button type="button" data-brandkit-preview-btn
+                                                class="px-4 py-2 text-sm font-semibold"
+                                                style="background: var(--bk-btn); color: var(--bk-btnt); border-radius: var(--bk-rc);">Primary action</button>
+                                        <a href="#branding" onclick="return false;" class="text-sm font-semibold" style="color: var(--bk-link);">A themed link</a>
                                     </div>
                                 </div>
-                            @endforeach
+                            </div>
                         </div>
-                        <div class="mt-5 flex items-center gap-3">
+
+                        @foreach ($branding['groups'] as $group)
+                            <fieldset class="mb-6 min-w-0">
+                                <legend class="mb-3 text-mini font-bold uppercase tracking-wide text-ink-faint">{{ $group['name'] }}</legend>
+                                <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                    @foreach ($group['fields'] as $field)
+                                        @php
+                                            $isColor = $field['type'] === 'color';
+                                            $eff = $field['effective'];
+                                            // Native colour inputs need #rrggbb; expand #rgb.
+                                            $colorVal = $eff;
+                                            if ($isColor && preg_match('/^#([0-9a-fA-F]{3})$/', $eff, $m)) {
+                                                $colorVal = '#'.$m[1][0].$m[1][0].$m[1][1].$m[1][1].$m[1][2].$m[1][2];
+                                            }
+                                            $inheriting = old('inherit.'.$field['key'], $field['inheriting'] ? '1' : null) !== null;
+                                        @endphp
+                                        <div class="rounded-control border border-line bg-paper p-4" data-brandkit-field data-key="{{ $field['key'] }}" data-type="{{ $field['type'] }}" data-default="{{ $field['default'] }}">
+                                            <div class="flex items-start gap-3">
+                                                {{-- Swatch / shape preview --}}
+                                                @if ($isColor)
+                                                    <span data-brandkit-swatch class="mt-0.5 h-9 w-9 flex-none rounded-control border border-line shadow-quiet" style="background: {{ $colorVal }};"></span>
+                                                @else
+                                                    <span data-brandkit-swatch class="mt-0.5 h-9 w-9 flex-none border-2 border-slatecard/70 bg-surface" style="border-radius: {{ $eff }};"></span>
+                                                @endif
+                                                <div class="min-w-0 flex-1">
+                                                    <label for="bk-{{ $field['key'] }}" class="block text-sm font-semibold text-slatecard">{{ $field['label'] }}</label>
+                                                    @if ($field['helper'] !== '')
+                                                        <p class="mt-0.5 text-mini leading-snug text-ink-soft">{{ $field['helper'] }}</p>
+                                                    @endif
+                                                    <span class="mt-1 block font-mono text-micro text-ink-faint">{{ $field['css_var'] }}</span>
+                                                </div>
+                                            </div>
+
+                                            {{-- Default / Custom control. The checkbox is the source of truth
+                                                 (checked = inherit the platform default); the buttons drive it. --}}
+                                            <input type="checkbox" name="inherit[{{ $field['key'] }}]" value="1" data-brandkit-inherit @checked($inheriting) class="sr-only">
+                                            <div class="mt-3 inline-flex rounded-control border border-line bg-surface p-0.5 text-mini font-semibold" role="group" aria-label="Value source">
+                                                <button type="button" data-brandkit-mode="default" class="rounded-control px-2.5 py-1 transition">Default</button>
+                                                <button type="button" data-brandkit-mode="custom" class="rounded-control px-2.5 py-1 transition">Custom</button>
+                                            </div>
+
+                                            <div class="mt-3 flex items-center gap-3">
+                                                @if ($isColor)
+                                                    <input type="color" id="bk-{{ $field['key'] }}" name="tokens[{{ $field['key'] }}]"
+                                                           value="{{ old('tokens.'.$field['key'], $colorVal) }}" data-brandkit-input
+                                                           class="h-9 w-12 flex-none cursor-pointer rounded-control border border-line bg-surface p-1">
+                                                    <span data-brandkit-value class="font-mono text-caption text-ink-soft">{{ old('tokens.'.$field['key'], $colorVal) }}</span>
+                                                @else
+                                                    <input type="text" id="bk-{{ $field['key'] }}" name="tokens[{{ $field['key'] }}]"
+                                                           value="{{ old('tokens.'.$field['key'], $field['current'] ?? $colorVal) }}" placeholder="{{ $field['default'] }}" data-brandkit-input
+                                                           class="w-full rounded-control border border-line bg-surface px-3 py-2 text-sm text-slatecard placeholder:text-ink-faint focus:outline-none focus:ring-2 focus:ring-button-primary">
+                                                @endif
+                                                <span class="ml-auto text-micro text-ink-faint whitespace-nowrap">default {{ $field['default'] }}</span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </fieldset>
+                        @endforeach
+
+                        <div class="mt-2 flex flex-wrap items-center gap-3">
                             <button type="submit"
                                     class="inline-flex items-center gap-1.5 rounded-control bg-button-primary px-4 py-2 text-sm font-semibold text-button-primary-text transition hover:bg-button-primary-hover focus:outline-none focus:ring-2 focus:ring-button-primary focus:ring-offset-2">
                                 Save brand kit
@@ -300,23 +354,85 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('[data-brandkit-field]').forEach(function (field) {
+    var preview = document.querySelector('[data-brandkit-preview]');
+    // token key -> live-preview target. isBg sets the panel background directly;
+    // otherwise the value is written to the named CSS custom property.
+    var PREVIEW_MAP = {
+        'color-paper':               { bg: true },
+        'color-slatecard':           { prop: '--bk-head' },
+        'color-brand-primary':       { prop: '--bk-link' },
+        'color-button-primary':      { prop: '--bk-btn' },
+        'color-button-primary-hover':{ prop: '--bk-btnh' },
+        'color-button-primary-text': { prop: '--bk-btnt' },
+        'radius-control':            { prop: '--bk-rc' },
+        'radius-panel':              { prop: '--bk-rp' }
+    };
+
+    var fields = Array.prototype.slice.call(document.querySelectorAll('[data-brandkit-field]'));
+
+    function effective(field) {
+        var inherit = field.querySelector('[data-brandkit-inherit]');
+        var input = field.querySelector('[data-brandkit-input]');
+        return (inherit && inherit.checked) ? field.getAttribute('data-default') : (input ? input.value : '');
+    }
+
+    function paintPreview() {
+        if (!preview) return;
+        fields.forEach(function (field) {
+            var map = PREVIEW_MAP[field.getAttribute('data-key')];
+            if (!map) return;
+            var val = effective(field);
+            if (map.bg) { preview.style.background = val; }
+            else { preview.style.setProperty(map.prop, val); }
+        });
+    }
+
+    fields.forEach(function (field) {
         var inherit = field.querySelector('[data-brandkit-inherit]');
         var input = field.querySelector('[data-brandkit-input]');
         if (!inherit || !input) return;
-        var hex = (input.type === 'color') ? input.nextElementSibling : null;
+        var swatch = field.querySelector('[data-brandkit-swatch]');
+        var valueLabel = field.querySelector('[data-brandkit-value]');
+        var isColor = field.getAttribute('data-type') === 'color';
+        var modeBtns = field.querySelectorAll('[data-brandkit-mode]');
+
+        function paintField() {
+            var val = effective(field);
+            if (swatch) {
+                if (isColor) { swatch.style.background = val; }
+                else { swatch.style.borderRadius = val; }
+            }
+            if (valueLabel) { valueLabel.textContent = val; }
+        }
 
         function sync() {
-            input.disabled = inherit.checked;
-            input.classList.toggle('opacity-50', inherit.checked);
+            var isDefault = inherit.checked;
+            input.disabled = isDefault;
+            input.classList.toggle('opacity-50', isDefault);
+            modeBtns.forEach(function (b) {
+                var on = (b.getAttribute('data-brandkit-mode') === 'custom') ? !isDefault : isDefault;
+                b.classList.toggle('bg-button-primary', on);
+                b.classList.toggle('text-button-primary-text', on);
+                b.classList.toggle('text-ink-soft', !on);
+            });
+            paintField();
+            paintPreview();
         }
-        inherit.addEventListener('change', sync);
+
+        modeBtns.forEach(function (b) {
+            b.addEventListener('click', function () {
+                inherit.checked = (b.getAttribute('data-brandkit-mode') === 'default');
+                sync();
+            });
+        });
         input.addEventListener('input', function () {
-            if (inherit.checked) { inherit.checked = false; sync(); }
-            if (hex) hex.textContent = input.value;
+            if (inherit.checked) { inherit.checked = false; }
+            sync();
         });
         sync();
     });
+
+    paintPreview();
 });
 </script>
 @endpush

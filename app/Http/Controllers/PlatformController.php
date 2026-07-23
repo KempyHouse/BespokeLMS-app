@@ -192,6 +192,12 @@ final class PlatformController extends Controller
             return null;
         }
 
+        // The order the editor groups are presented in. Any themeable token
+        // whose editor_group is not listed here (or is null) falls into "Other"
+        // so nothing silently disappears from the editor.
+        $groupOrder = ['Brand core', 'Surfaces', 'Buttons', 'Accent', 'Shape'];
+        $grouped = [];
+
         $fields = [];
         foreach ($tokens as $token) {
             if (empty($token['themeable']) || ! isset($token['key'])) {
@@ -200,22 +206,41 @@ final class PlatformController extends Controller
             $key = (string) $token['key'];
             $default = (string) ($token['default_value'] ?? '');
             $current = $overrides[$key] ?? null;
+            $group = trim((string) ($token['editor_group'] ?? '')) ?: 'Other';
+            $label = trim((string) ($token['label'] ?? '')) ?: trim((string) ($token['description'] ?? '')) ?: $key;
 
-            $fields[] = [
+            $field = [
                 'key' => $key,
                 'css_var' => (string) ($token['css_var'] ?? ''),
                 'type' => (string) ($token['type'] ?? 'other'),
-                'label' => (string) ($token['description'] ?? $key),
+                'label' => $label,
+                'helper' => trim((string) ($token['helper'] ?? '')),
                 'default' => $default,
                 'current' => $current,
                 'effective' => $current ?? $default,
                 'inheriting' => $current === null,
             ];
+
+            $fields[] = $field;
+            $grouped[$group][] = $field;
+        }
+
+        // Emit groups in the defined order, appending any unlisted groups last.
+        $groups = [];
+        foreach ($groupOrder as $name) {
+            if (! empty($grouped[$name])) {
+                $groups[] = ['name' => $name, 'fields' => $grouped[$name]];
+                unset($grouped[$name]);
+            }
+        }
+        foreach ($grouped as $name => $groupFields) {
+            $groups[] = ['name' => $name, 'fields' => $groupFields];
         }
 
         return [
             'has_overrides' => $overrides !== [],
             'fields' => $fields,
+            'groups' => $groups,
         ];
     }
 

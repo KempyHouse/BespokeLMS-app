@@ -18,9 +18,13 @@ use App\Support\Supabase\Exceptions\SupabaseAuthException;
 interface ReadsDesignTokens
 {
     /**
-     * The full token contract, ordered for display.
+     * The full token contract, ordered for display. Alongside the raw contract
+     * (key, css_var, type, values, themeable) each row carries the editor
+     * metadata used by the brand-kit editor: a human `label`, one-line `helper`
+     * text, and the `editor_group` a themeable token belongs to (null when the
+     * token is not surfaced to tenants).
      *
-     * @return array<int,array{key:string,css_var:string,default_value:string,themeable:bool}>
+     * @return array<int,array{key:string,css_var:string,type:string,default_value:string,dark_value:?string,themeable:bool,category:?string,description:?string,label:?string,helper:?string,editor_group:?string}>
      *
      * @throws SupabaseAuthException
      */
