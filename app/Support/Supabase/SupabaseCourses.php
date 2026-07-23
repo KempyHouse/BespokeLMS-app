@@ -79,6 +79,146 @@ final class SupabaseCourses implements ReadsCourses
         return $courses;
     }
 
+    public function find(string $courseId): ?array
+    {
+        if ($this->serviceRoleKey === '') {
+            throw new SupabaseAuthException(
+                'The Supabase service-role key is not configured, so the course cannot be loaded.',
+            );
+        }
+
+        $course = $this->fetchCourse($courseId);
+        if ($course === null) {
+            return null;
+        }
+
+        $ownerIsPlatform = ($course['owner_org_id'] ?? null) === null;
+
+        // category
+        $categoryId = (string) ($course['category_id'] ?? '');
+        $course['category_name'] = $categoryId !== '' ? ($this->categoryNames()[$categoryId] ?? null) : null;
+
+        // visibility + entitlement count
+        $vis = $this->bestEffort('/rest/v1/course_visibility', [
+            'select' => 'scope', 'course_id' => 'eq.'.$courseId,
+        ]);
+        $course['visibility_scope'] = isset($vis[0]['scope'])
+            ? (string) $vis[0]['scope']
+            : ($ownerIsPlatform ? 'global' : 'private');
+        $granted = 0;
+        foreach ($this->bestEffort('/rest/v1/course_entitlements', ['select' => 'state', 'course_id' => 'eq.'.$courseId]) as $e) {
+            if (($e['state'] ?? '') === 'granted') {
+                $granted++;
+            }
+        }
+        $course['entitlement_count'] = $granted;
+
+        // versions (newest first)
+        $versions = $this->bestEffort('/rest/v1/course_versions', [
+            'select' => 'id,version_no,semver,status,published_at,review_due_at,changelog',
+            'course_id' => 'eq.'.$courseId,
+            'order' => 'version_no.desc',
+        ]);
+        $course['versions'] = $versions;
+
+        $currentId = (string) ($course['current_published_version_id'] ?? '');
+        $course['current_version'] = null;
+        foreach ($versions as $version) {
+            if ((string) ($version['id'] ?? '') === $currentId) {
+                $course['current_version'] = $version;
+                break;
+            }
+        }
+
+        // language variants across this course's versions
+        $versionIds = array_values(array_filter(array_map(
+            static fn (array $v): string => (string) ($v['id'] ?? ''),
+            $versions,
+        )));
+        $locales = [];
+        if ($versionIds !== []) {
+            $translations = $this->bestEffort('/rest/v1/content_translations', [
+                'select' => 'locale',
+                'entity_type' => 'eq.course_version',
+                'entity_id' => 'in.('.implode(',', $versionIds).')',
+            ]);
+            foreach ($translations as $t) {
+                $locale = (string) ($t['locale'] ?? '');
+                if ($locale !== '') {
+                    $locales[$locale] = true;
+                }
+            }
+        }
+        $course['locales'] = array_keys($locales);
+
+        // workflow state of the current (or latest) version
+        $wfVersionId = $currentId !== '' ? $currentId : (string) ($versions[0]['id'] ?? '');
+        $course['workflow_state'] = null;
+        if ($wfVersionId !== '') {
+            $wf = $this->bestEffort('/rest/v1/course_workflow_state', [
+                'select' => 'workflow_states(key,label)',
+                'course_version_id' => 'eq.'.$wfVersionId,
+            ]);
+            $course['workflow_state'] = $wf[0]['workflow_states']['label']
+                ?? $wf[0]['workflow_states']['key']
+                ?? null;
+        }
+
+        // content review clock
+        $rs = $this->bestEffort('/rest/v1/review_schedule', [
+            'select' => 'review_due_at', 'course_id' => 'eq.'.$courseId,
+        ]);
+        $course['review_due_at'] = $rs[0]['review_due_at'] ?? null;
+
+        return $course;
+    }
+
+    /**
+     * Fetch a single course row (with the full model, falling back to the
+     * legacy columns), including its description. Null if the id is unknown.
+     *
+     * @return array<string,mixed>|null
+     */
+    private function fetchCourse(string $courseId): ?array
+    {
+        try {
+            $response = $this->request()->get('/rest/v1/courses', [
+                'select' => self::COURSE_SELECT.',description',
+                'id' => 'eq.'.$courseId,
+            ]);
+        } catch (ConnectionException $e) {
+            throw new SupabaseAuthException('Could not reach the Supabase data service.', 0, $e);
+        }
+
+        if (! $response->successful()) {
+            try {
+                $legacy = $this->request()->get('/rest/v1/courses', [
+                    'select' => self::COURSE_SELECT_LEGACY.',description',
+                    'id' => 'eq.'.$courseId,
+                ]);
+            } catch (ConnectionException $e) {
+                throw new SupabaseAuthException('Could not reach the Supabase data service.', 0, $e);
+            }
+
+            if (! $legacy->successful()) {
+                throw new SupabaseAuthException(
+                    "Supabase course lookup failed (HTTP {$response->status()}).",
+                    $response->status(),
+                );
+            }
+
+            /** @var array<int,array<string,mixed>> $rows */
+            $rows = $legacy->json() ?? [];
+
+            return $rows[0] ?? null;
+        }
+
+        /** @var array<int,array<string,mixed>> $rows */
+        $rows = $response->json() ?? [];
+
+        return $rows[0] ?? null;
+    }
+
     /**
      * Fetch every course row. A failure here is fatal to the catalogue view.
      *

@@ -10,16 +10,19 @@ use App\Support\Supabase\Contracts\AuthenticatesWithSupabase;
 use App\Support\Supabase\Contracts\ReadsAiIntegrations;
 use App\Support\Supabase\Contracts\ReadsCourses;
 use App\Support\Supabase\Contracts\ReadsDesignTokens;
+use App\Support\Supabase\Contracts\ReadsEmailIntegrations;
 use App\Support\Supabase\Contracts\ReadsOrganizations;
 use App\Support\Supabase\Contracts\ReadsProfiles;
 use App\Support\Supabase\SupabaseAuth;
 use App\Support\Supabase\Contracts\WritesAiIntegrations;
 use App\Support\Supabase\Contracts\WritesBrandKits;
+use App\Support\Supabase\Contracts\WritesEmailIntegrations;
 use App\Support\Supabase\Contracts\WritesProfiles;
 use App\Support\Supabase\SupabaseAiIntegrations;
 use App\Support\Supabase\SupabaseBrandKits;
 use App\Support\Supabase\SupabaseCourses;
 use App\Support\Supabase\SupabaseDesignTokens;
+use App\Support\Supabase\SupabaseEmailIntegrations;
 use App\Support\Supabase\SupabaseOrganizations;
 use App\Support\Supabase\SupabaseProfiles;
 use App\Support\Supabase\SupabaseProfilesWriter;
@@ -130,6 +133,22 @@ class AppServiceProvider extends ServiceProvider
         });
         $this->app->bind(ReadsAiIntegrations::class, SupabaseAiIntegrations::class);
         $this->app->bind(WritesAiIntegrations::class, SupabaseAiIntegrations::class);
+
+        // Email transport integrations (owner-level). One service-role client
+        // implements both the read and write contracts, mirroring the AI slice.
+        $this->app->singleton(SupabaseEmailIntegrations::class, function (Application $app): SupabaseEmailIntegrations {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseEmailIntegrations(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+        $this->app->bind(ReadsEmailIntegrations::class, SupabaseEmailIntegrations::class);
+        $this->app->bind(WritesEmailIntegrations::class, SupabaseEmailIntegrations::class);
 
         $this->app->singleton(WritesProfiles::class, function (Application $app): SupabaseProfilesWriter {
             /** @var array<string,mixed> $config */

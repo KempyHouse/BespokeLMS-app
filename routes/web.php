@@ -8,6 +8,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmailIntegrationController;
 use App\Http\Controllers\MyWorkspaceController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\PreferencesController;
@@ -75,6 +76,8 @@ Route::middleware('auth')->group(function (): void {
             // Global Courses console — the ecosystem-wide course catalogue
             // (platform-owned courses that cascade to tenants + operator courses).
             Route::get('courses', [CourseController::class, 'index'])->name('courses');
+            // Course workspace — read-only drill-in for one course.
+            Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
 
             // Per-tenant admin console (configuration hub). {tenant} is an
             // organisation UUID; the controller 404s an unknown id.
@@ -88,5 +91,11 @@ Route::middleware('auth')->group(function (): void {
             // ElevenLabs, …), configured once and inherited by every tenant.
             Route::get('ai', [AiIntegrationController::class, 'index'])->name('ai');
             Route::put('ai/{integration}', [AiIntegrationController::class, 'update'])->name('ai.update');
+
+            // Owner-level email transport (Resend, Postmark, SES, SMTP, …),
+            // configured once here and inherited by every tenant. Per-tenant
+            // sender identities ("aliases") are set on each tenant's console.
+            Route::get('email', [EmailIntegrationController::class, 'index'])->name('email');
+            Route::put('email/{integration}', [EmailIntegrationController::class, 'update'])->name('email.update');
         });
 });

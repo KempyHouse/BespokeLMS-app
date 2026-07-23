@@ -28,4 +28,16 @@ interface ReadsCourses
      * @throws SupabaseAuthException
      */
     public function all(): array;
+
+    /**
+     * Return one course by id, enriched with its category, visibility scope +
+     * entitlement count, versions, language variants, current-version workflow
+     * state, and content-review date. Null if the id is unknown. Enrichment
+     * joins are best-effort (degrade before migrations 003–006 are applied).
+     *
+     * @return array<string,mixed>|null
+     *
+     * @throws SupabaseAuthException
+     */
+    public function find(string $courseId): ?array;
 }

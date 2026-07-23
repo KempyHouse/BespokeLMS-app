@@ -22,7 +22,7 @@
                         </a>
                     </li>
                     <li>
-                        <a href="#courses" data-section="courses"
+                        <a href="{{ route('platform.courses') }}"
                            class="rail-item flex items-center gap-2.5 border-b border-line py-2.5 text-sm font-medium text-slatecard transition hover:text-teachhq focus:outline-none">
                             <svg class="nav-ico h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/></svg>
                             <span class="min-w-0 flex-1 truncate">Global Courses</span>
@@ -37,9 +37,16 @@
                     </li>
                     <li>
                         <a href="{{ route('platform.ai') }}"
-                           class="rail-item flex items-center gap-2.5 py-2.5 text-sm font-medium text-slatecard transition hover:text-teachhq focus:outline-none">
+                           class="rail-item flex items-center gap-2.5 border-b border-line py-2.5 text-sm font-medium text-slatecard transition hover:text-teachhq focus:outline-none">
                             <svg class="nav-ico h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
                             <span class="min-w-0 flex-1 truncate">AI Integration</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('platform.email') }}"
+                           class="rail-item flex items-center gap-2.5 py-2.5 text-sm font-medium text-slatecard transition hover:text-teachhq focus:outline-none">
+                            <svg class="nav-ico h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                            <span class="min-w-0 flex-1 truncate">Email Integration</span>
                         </a>
                     </li>
                 </ul>

@@ -96,6 +96,7 @@
             foreach ($courses ?? [] as $c) {
                 $courseRows[] = [
                     'id' => $c['id'],
+                    'href' => route('platform.courses.show', $c['id']),
                     'search' => implode(' ', array_filter([
                         $c['title'], $c['owner_name'], $c['category'], $c['type_label'], $c['status_label'],
                     ])),
@@ -117,7 +118,7 @@
                         'updated' => ['type' => 'muted', 'value' => $c['updated_label'], 'sort' => $c['updated_sort']],
                     ],
                     'actions' => [
-                        ['label' => 'Open course', 'disabled' => true, 'note' => 'soon'],
+                        ['label' => 'Open course', 'href' => route('platform.courses.show', $c['id'])],
                         ['label' => 'Manage visibility', 'disabled' => true, 'note' => 'soon'],
                     ],
                 ];

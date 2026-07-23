@@ -66,6 +66,33 @@ final class CourseController extends Controller
     }
 
     /**
+     * Course workspace — the read-only drill-in for one course: overview,
+     * versions, language variants, workflow state and visibility. Editing and
+     * the create flow arrive in later slices.
+     */
+    public function show(Request $request, ReadsCourses $courses, ReadsOrganizations $organizations, string $course): View
+    {
+        /** @var SupabaseUser $user */
+        $user = $request->user();
+
+        try {
+            $row = $courses->find($course);
+        } catch (SupabaseAuthException $e) {
+            report($e);
+            abort(503, 'The course could not be loaded right now. Please try again shortly.');
+        }
+
+        if ($row === null) {
+            abort(404);
+        }
+
+        return view('platform.courses.show', [
+            'user' => $user,
+            'course' => $this->buildCourseDetail($row, $this->ownerNames($organizations)),
+        ]);
+    }
+
+    /**
      * Organisation id => name, for labelling each course's owner. Best-effort:
      * a failure degrades owner labels to "Operator" but never hides the list.
      *
@@ -191,6 +218,83 @@ final class CourseController extends Controller
             $categoryOptions,
             $ownerOptions,
         ];
+    }
+
+    /**
+     * Shape one enriched course row into the workspace detail model.
+     *
+     * @param  array<string,mixed>  $c
+     * @param  array<string,string>  $ownerNames
+     * @return array<string,mixed>
+     */
+    private function buildCourseDetail(array $c, array $ownerNames): array
+    {
+        $ownerOrgId = $c['owner_org_id'] ?? null;
+        $ownerIsPlatform = $ownerOrgId === null;
+        $type = (string) ($c['content_type'] ?? 'native');
+        $status = (string) ($c['catalog_status'] ?? 'published');
+        $scope = (string) ($c['visibility_scope'] ?? 'global');
+
+        $versions = [];
+        foreach (($c['versions'] ?? []) as $v) {
+            $vStatus = (string) ($v['status'] ?? '');
+            $versions[] = [
+                'version_no' => (int) ($v['version_no'] ?? 0),
+                'semver' => (string) ($v['semver'] ?? ''),
+                'status' => $vStatus,
+                'status_label' => $this->versionStatusLabel($vStatus),
+                'status_tone' => $this->versionStatusTone($vStatus),
+                'published_label' => $this->formatDate($v['published_at'] ?? null),
+                'review_due_label' => $this->formatDate($v['review_due_at'] ?? null),
+                'changelog' => ($v['changelog'] ?? null) !== null ? (string) $v['changelog'] : null,
+            ];
+        }
+
+        return [
+            'id' => (string) ($c['id'] ?? ''),
+            'title' => (string) ($c['title'] ?? ''),
+            'description' => ($c['description'] ?? null) !== null ? (string) $c['description'] : null,
+            'slug' => (string) ($c['slug'] ?? ''),
+            'owner_name' => $ownerIsPlatform ? 'Platform' : ($ownerNames[(string) $ownerOrgId] ?? 'Operator'),
+            'owner_is_platform' => $ownerIsPlatform,
+            'type' => $type,
+            'type_label' => $this->typeLabel($type),
+            'status' => $status,
+            'status_label' => $this->statusLabel($status),
+            'status_tone' => $this->statusTone($status),
+            'category' => ($c['category_name'] ?? null) !== null ? (string) $c['category_name'] : null,
+            'scope' => $scope,
+            'scope_label' => $this->scopeLabel($scope),
+            'scope_tone' => $this->scopeTone($scope),
+            'entitlement_count' => (int) ($c['entitlement_count'] ?? 0),
+            'versions' => $versions,
+            'current_version' => isset($c['current_version']['semver']) ? (string) $c['current_version']['semver'] : null,
+            'locales' => array_values($c['locales'] ?? []),
+            'workflow_state' => ($c['workflow_state'] ?? null) !== null ? (string) $c['workflow_state'] : null,
+            'review_due_label' => $this->formatDate($c['review_due_at'] ?? null),
+            'created_label' => $this->formatDate($c['created_at'] ?? null),
+            'updated_label' => $this->formatDate($c['updated_at'] ?? ($c['created_at'] ?? null)),
+        ];
+    }
+
+    private function versionStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'draft' => 'Draft',
+            'published' => 'Published',
+            'archived' => 'Archived',
+            default => Str::title($status),
+        };
+    }
+
+    private function versionStatusTone(string $status): string
+    {
+        return match ($status) {
+            'published' => 'green',
+            'archived' => 'soft',
+            'draft' => 'neutral',
+            default => 'neutral',
+        };
     }
 
     private function typeLabel(string $type): string
