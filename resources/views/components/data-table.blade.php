@@ -92,17 +92,28 @@
             @endif
 
             @foreach ($filters as $filter)
-                <div class="relative min-w-0">
-                    <label for="{{ $id }}-f-{{ $filter['key'] }}" class="sr-only">{{ $filter['label'] }}</label>
-                    <select id="{{ $id }}-f-{{ $filter['key'] }}" data-dt-filter="{{ $filter['key'] }}"
-                            class="w-full appearance-none rounded-control border border-line bg-surface py-2 pl-3 pr-10 text-sm font-medium text-slatecard focus:outline-none focus:ring-2 focus:ring-teachhq">
-                        <option value="">{{ $filter['label'] }}: All</option>
+                {{-- Custom, fully-themed filter dropdown (a native <select> cannot
+                     style its opened option list). data-value holds the current
+                     selection; the behaviour script reads it and re-filters. --}}
+                <details class="relative min-w-0" data-dropdown data-dt-filter="{{ $filter['key'] }}" data-value="">
+                    <summary aria-label="{{ $filter['label'] }}"
+                             class="flex cursor-pointer items-center justify-between gap-2 rounded-control border border-line bg-surface py-2 pl-3 pr-3 text-sm font-medium text-slatecard transition hover:border-ink-faint focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">
+                        <span data-dt-filter-label class="whitespace-nowrap text-ink-soft">{{ $filter['label'] }}: All</span>
+                        <svg class="select-chevron h-4 w-4 flex-none text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+                    </summary>
+                    <div class="absolute left-0 z-40 mt-1 max-h-72 w-48 overflow-y-auto rounded-panel border border-line bg-surface p-1 shadow-panel" role="menu">
+                        <button type="button" data-dt-option="" data-dt-option-label="{{ $filter['label'] }}: All"
+                                class="flex w-full items-center rounded-control px-2.5 py-2 text-left text-sm text-slatecard transition hover:bg-paper focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">
+                            {{ $filter['label'] }}: All
+                        </button>
                         @foreach ($filter['options'] as $opt)
-                            <option value="{{ $opt['value'] }}">{{ $opt['label'] }}</option>
+                            <button type="button" data-dt-option="{{ $opt['value'] }}" data-dt-option-label="{{ $opt['label'] }}"
+                                    class="flex w-full items-center rounded-control px-2.5 py-2 text-left text-sm text-slatecard transition hover:bg-paper focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">
+                                {{ $opt['label'] }}
+                            </button>
                         @endforeach
-                    </select>
-                    <svg class="select-chevron pointer-events-none absolute right-3 top-1/2 -mt-2 h-4 w-4 text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
-                </div>
+                    </div>
+                </details>
             @endforeach
 
             </div>
@@ -325,7 +336,7 @@
                     if ((row.getAttribute('data-search') || '').indexOf(q) === -1) return false;
                 }
                 for (var i = 0; i < filters.length; i++) {
-                    var v = filters[i].value;
+                    var v = filters[i].getAttribute('data-value') || '';
                     if (!v) continue;
                     var key = filters[i].getAttribute('data-dt-filter');
                     if ((row.getAttribute('data-filter-' + key) || '') !== v) return false;
@@ -383,7 +394,33 @@
             });
 
             if (searchInput) searchInput.addEventListener('input', function () { page = 1; apply(); });
-            filters.forEach(function (s) { s.addEventListener('change', function () { page = 1; apply(); }); });
+
+            // Custom filter dropdowns: each option button sets the details'
+            // data-value, updates the summary label + active state, then re-filters.
+            filters.forEach(function (dd) {
+                var labelEl = dd.querySelector('[data-dt-filter-label]');
+                var options = Array.prototype.slice.call(dd.querySelectorAll('[data-dt-option]'));
+                options.forEach(function (opt) {
+                    opt.addEventListener('click', function () {
+                        dd.setAttribute('data-value', opt.getAttribute('data-dt-option') || '');
+                        if (labelEl) labelEl.textContent = opt.getAttribute('data-dt-option-label') || '';
+                        options.forEach(function (o) { o.classList.remove('bg-teachhq-soft', 'font-semibold', 'text-teachhq-dark'); o.classList.add('text-slatecard'); });
+                        opt.classList.add('bg-teachhq-soft', 'font-semibold', 'text-teachhq-dark'); opt.classList.remove('text-slatecard');
+                        dd.removeAttribute('open');
+                        page = 1; apply();
+                    });
+                });
+                dd.addEventListener('toggle', function () {
+                    if (dd.open) { filters.forEach(function (o) { if (o !== dd) o.removeAttribute('open'); }); }
+                });
+            });
+            // Close filter dropdowns on outside click / Escape.
+            document.addEventListener('click', function (e) {
+                filters.forEach(function (dd) { if (dd.open && !dd.contains(e.target)) dd.removeAttribute('open'); });
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') filters.forEach(function (dd) { dd.removeAttribute('open'); });
+            });
             if (prevBtn) prevBtn.addEventListener('click', function () { if (page > 1) { page--; apply(); } });
             if (nextBtn) nextBtn.addEventListener('click', function () { page++; apply(); });
 

@@ -303,6 +303,24 @@
 }
 
 @layer components {
+    /* Custom <details> dropdowns (e.g. the tenant switcher): hide the native
+       disclosure marker and rotate the chevron when open, so the control is
+       fully themed instead of falling back to the OS select styling. */
+    details[data-dropdown] > summary {
+        list-style: none;
+    }
+    details[data-dropdown] > summary::-webkit-details-marker {
+        display: none;
+    }
+    details[data-dropdown] > summary::marker {
+        content: '';
+    }
+    details[data-dropdown][open] .select-chevron {
+        transform: rotate(180deg);
+    }
+}
+
+@layer components {
     /* Data-table: base row background lives here (not as a utility) so the
        hover / selected utilities on the row always win cleanly, and the frozen
        checkbox column can pick up the row colour with `bg-inherit`. */
