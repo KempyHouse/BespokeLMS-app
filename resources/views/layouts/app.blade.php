@@ -146,7 +146,7 @@
                     <a href="{{ route('dashboard') }}" role="menuitem"
                        class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-slatecard transition hover:bg-paper focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">
                         <svg class="h-icon w-icon flex-none text-ink-faint" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>
-                        Back to dashboard
+                        Home
                     </a>
 
                     <div class="mt-1 flex items-center gap-2 px-2.5 py-1.5 text-mini text-ink-soft">

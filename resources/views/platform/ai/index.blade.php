@@ -187,7 +187,7 @@
                                         </div>
                                     </dl>
 
-                                    <div class="mt-4 flex items-center justify-end gap-3 border-t border-line pt-4">
+                                    <div class="mt-auto flex items-center justify-end gap-3 border-t border-line pt-4">
                                         <span class="mr-auto text-micro text-ink-faint">{{ $card['has_key'] ? 'Key on file' : 'No key yet' }}</span>
                                         <button type="submit"
                                                 class="inline-flex items-center gap-1.5 rounded-control bg-button-primary px-4 py-2 text-sm font-semibold text-button-primary-text transition hover:bg-button-primary-hover focus:outline-none focus:ring-2 focus:ring-button-primary focus:ring-offset-2">
