@@ -397,7 +397,7 @@
        instead of jumping when it reaches the end of the content column. */
     .rail-sticky {
         position: sticky;
-        top: 6.5rem;
+        top: 6rem;
         align-self: flex-start;
         max-height: calc(100vh - 6rem);
         overflow-y: auto;
@@ -451,6 +451,7 @@
        never shifts the layout sideways. Keeps the workspace switcher — and
        everything else — pinned to the exact same position across all pages. */
     html {
+        overflow-y: scroll;   /* always reserve the vertical scrollbar so page width is constant (scrollbar-gutter is ignored on the visible-overflow root) */
         scrollbar-gutter: stable;
     }
 }
