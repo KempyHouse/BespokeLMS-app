@@ -6,7 +6,9 @@ use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MyWorkspaceController;
 use App\Http\Controllers\PlatformController;
+use App\Http\Controllers\TeamWorkspaceController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -38,6 +40,12 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/', DashboardController::class)->name('dashboard');
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
+    // Rebuilt workspace shells — blank scaffolds being migrated off the
+    // frozen prototype. Any authenticated user may load the shell; Supabase
+    // RLS governs whatever tenant data the pages eventually read.
+    Route::get('my', MyWorkspaceController::class)->name('my.home');
+    Route::get('team', TeamWorkspaceController::class)->name('team.home');
+
     /*
     | Platform-owner-only area. The "platform.owner" middleware returns 404 to
     | anyone who is not the BespokeLMS platform owner, so the area is neither
@@ -49,5 +57,13 @@ Route::middleware('auth')->group(function (): void {
         ->name('platform.')
         ->group(function (): void {
             Route::get('/', [PlatformController::class, 'index'])->name('home');
+
+            // Per-tenant admin console (configuration hub). {tenant} is an
+            // organisation UUID; the controller 404s an unknown id.
+            Route::get('tenants/{tenant}', [PlatformController::class, 'show'])->name('tenants.show');
+
+            // Save a tenant's brand kit (themeable design-token overrides).
+            Route::put('tenants/{tenant}/branding', [PlatformController::class, 'updateBranding'])
+                ->name('tenants.branding.update');
         });
 });

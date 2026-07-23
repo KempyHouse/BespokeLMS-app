@@ -5,9 +5,16 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Auth\SupabaseUser;
+use App\Http\Requests\UpdateTenantBrandingRequest;
+use App\Support\Supabase\Contracts\ReadsDesignTokens;
 use App\Support\Supabase\Contracts\ReadsOrganizations;
+use App\Support\Supabase\Contracts\WritesBrandKits;
 use App\Support\Supabase\Exceptions\SupabaseAuthException;
+use App\Support\Theme\ThemeResolver;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 /**
@@ -17,99 +24,424 @@ use Illuminate\View\View;
  * and Supabase RLS on every table the console reads with a user token. The
  * cross-tenant estate view is read with the service-role key (see
  * {@see ReadsOrganizations}); the route middleware is its authorisation boundary.
+ *
+ * Every tenant, and everything shown about it, is loaded from Supabase — the
+ * platform is fully database-driven so new white-label tenants are pure
+ * configuration, scaling to hundreds of organisations.
  */
 final class PlatformController extends Controller
 {
+    /**
+     * Tenants index — a flat, sortable/filterable table of every organisation
+     * in the estate (operators and their client organisations).
+     */
     public function index(Request $request, ReadsOrganizations $organizations): View
     {
         /** @var SupabaseUser $user */
         $user = $request->user();
 
-        $estate = null;
-        $estateError = null;
+        $q = trim((string) $request->query('q', ''));
 
         try {
-            $estate = $this->buildEstate($organizations->all());
+            $rows = $organizations->all();
         } catch (SupabaseAuthException $e) {
             report($e);
-            $estateError = 'The tenant list could not be loaded right now. Please try again shortly.';
+
+            return view('platform.home', [
+                'user' => $user,
+                'tenants' => null,
+                'summary' => null,
+                'modelOptions' => [],
+                'estateError' => 'The tenant list could not be loaded right now. Please try again shortly.',
+                'q' => $q,
+            ]);
         }
+
+        [$tenants, $summary, $modelOptions] = $this->buildTenants($rows);
 
         return view('platform.home', [
             'user' => $user,
-            'estate' => $estate,
-            'estateError' => $estateError,
+            'tenants' => $tenants,
+            'summary' => $summary,
+            'modelOptions' => $modelOptions,
+            'estateError' => null,
+            'q' => $q,
         ]);
     }
 
     /**
-     * Shape the flat organisation rows into the operator → clients hierarchy the
-     * console renders, with derived per-tenant user counts and estate totals.
-     *
-     * @param  array<int,array<string,mixed>>  $rows
-     * @return array<string,mixed>
+     * Per-tenant admin console — the configuration hub for one organisation's
+     * white-label instance.
      */
-    private function buildEstate(array $rows): array
-    {
-        $operators = [];
-        $clientsByParent = [];
-        $clientCount = 0;
-        $userTotal = 0;
+    public function show(
+        Request $request,
+        ReadsOrganizations $organizations,
+        ReadsDesignTokens $designTokens,
+        WritesBrandKits $brandKits,
+        string $tenant
+    ): View {
+        /** @var SupabaseUser $user */
+        $user = $request->user();
 
-        // First pass: split rows by role and index client orgs under their operator.
+        try {
+            $rows = $organizations->all();
+        } catch (SupabaseAuthException $e) {
+            report($e);
+            abort(503, 'The tenant could not be loaded right now. Please try again shortly.');
+        }
+
+        $byId = [];
         foreach ($rows as $row) {
-            $type = (string) ($row['type'] ?? '');
-            $users = (int) ($row['user_count'] ?? 0);
+            $byId[(string) ($row['id'] ?? '')] = $row;
+        }
 
-            if ($type === 'client') {
-                $parentId = (string) ($row['parent_id'] ?? '');
-                $clientsByParent[$parentId][] = [
-                    'name' => (string) ($row['name'] ?? ''),
-                    'slug' => $row['slug'] ?? null,
-                    'subtype' => $row['subtype'] ?? null,
-                    'location' => $row['location'] ?? null,
-                    'user_count' => $users,
-                ];
-                $clientCount++;
-                $userTotal += $users;
+        $row = $byId[$tenant] ?? null;
+        if ($row === null) {
+            abort(404);
+        }
+
+        [$tenants] = $this->buildTenants($rows);
+
+        return view('platform.tenants.show', [
+            'user' => $user,
+            'tenant' => $this->buildTenantDetail($row, $byId, $rows),
+            'tenants' => $tenants,
+            'branding' => $this->buildBranding($tenant, $designTokens, $brandKits),
+        ]);
+    }
+
+    /**
+     * Persist a tenant's brand kit — the themeable design-token overrides that
+     * reskin its instance — then flush the tenant's resolved-theme cache.
+     */
+    public function updateBranding(
+        UpdateTenantBrandingRequest $request,
+        ReadsOrganizations $organizations,
+        WritesBrandKits $brandKits,
+        ThemeResolver $theme,
+        string $tenant
+    ): RedirectResponse {
+        try {
+            $rows = $organizations->all();
+        } catch (SupabaseAuthException $e) {
+            report($e);
+
+            return redirect()->route('platform.tenants.show', $tenant)
+                ->withFragment('branding')
+                ->with('brandingError', 'The tenant could not be loaded right now. Please try again shortly.');
+        }
+
+        $org = null;
+        foreach ($rows as $row) {
+            if ((string) ($row['id'] ?? '') === $tenant) {
+                $org = $row;
+                break;
+            }
+        }
+        if ($org === null) {
+            abort(404);
+        }
+
+        $themeable = $request->themeableTokens();
+        $values = (array) $request->validated('tokens', []);
+        $inherit = (array) $request->input('inherit', []);
+
+        $upserts = [];
+        $deletes = [];
+        foreach (array_keys($themeable) as $key) {
+            if (array_key_exists($key, $inherit)) {
+                $deletes[] = $key;
+            } elseif (isset($values[$key]) && $values[$key] !== '') {
+                $upserts[$key] = (string) $values[$key];
             }
         }
 
-        // Second pass: build the operator list with their nested clients.
+        try {
+            $kitId = $brandKits->ensurePublishedDefaultKitId($tenant, (string) ($org['name'] ?? 'Tenant'));
+            $brandKits->save($kitId, $upserts, $deletes);
+            $theme->flushOrg($tenant);
+        } catch (SupabaseAuthException $e) {
+            report($e);
+
+            return redirect()->route('platform.tenants.show', $tenant)
+                ->withFragment('branding')
+                ->with('brandingError', 'The brand kit could not be saved right now. Please try again shortly.');
+        }
+
+        return redirect()->route('platform.tenants.show', $tenant)
+            ->withFragment('branding')
+            ->with('status', 'Brand kit saved. This tenant\'s instance now uses the updated tokens.');
+    }
+
+    /**
+     * Build the brand-kit editor model for a tenant: every themeable token with
+     * its platform default, the tenant's current override (if any), and whether
+     * it is currently inheriting. Returns null if the token layer is unreachable.
+     *
+     * @return array<string,mixed>|null
+     */
+    private function buildBranding(string $organizationId, ReadsDesignTokens $designTokens, WritesBrandKits $brandKits): ?array
+    {
+        try {
+            $tokens = $designTokens->tokens();
+            $kitId = $brandKits->findPublishedDefaultKitId($organizationId);
+            $overrides = $kitId !== null ? $brandKits->overrides($kitId) : [];
+        } catch (SupabaseAuthException $e) {
+            report($e);
+
+            return null;
+        }
+
+        $fields = [];
+        foreach ($tokens as $token) {
+            if (empty($token['themeable']) || ! isset($token['key'])) {
+                continue;
+            }
+            $key = (string) $token['key'];
+            $default = (string) ($token['default_value'] ?? '');
+            $current = $overrides[$key] ?? null;
+
+            $fields[] = [
+                'key' => $key,
+                'css_var' => (string) ($token['css_var'] ?? ''),
+                'type' => (string) ($token['type'] ?? 'other'),
+                'label' => (string) ($token['description'] ?? $key),
+                'default' => $default,
+                'current' => $current,
+                'effective' => $current ?? $default,
+                'inheriting' => $current === null,
+            ];
+        }
+
+        return [
+            'has_overrides' => $overrides !== [],
+            'fields' => $fields,
+        ];
+    }
+
+    /**
+     * Shape the flat organisation rows into the table model, a summary, and the
+     * distinct "model" options used by the table's filter.
+     *
+     * @param  array<int,array<string,mixed>>  $rows
+     * @return array{0:array<int,array<string,mixed>>,1:array<string,int>,2:array<int,array{value:string,label:string}>}
+     */
+    private function buildTenants(array $rows): array
+    {
+        $nameById = [];
+        $childCount = [];
         foreach ($rows as $row) {
-            if ((string) ($row['type'] ?? '') !== 'operator') {
+            $nameById[(string) ($row['id'] ?? '')] = (string) ($row['name'] ?? '');
+            $parentId = (string) ($row['parent_id'] ?? '');
+            if ($parentId !== '') {
+                $childCount[$parentId] = ($childCount[$parentId] ?? 0) + 1;
+            }
+        }
+
+        $tenants = [];
+        $operators = 0;
+        $clients = 0;
+        $userTotal = 0;
+        $models = [];
+
+        foreach ($rows as $row) {
+            $type = (string) ($row['type'] ?? '');
+
+            // The platform organisation itself is not a tenant in the table.
+            if ($type === 'platform') {
                 continue;
             }
 
             $id = (string) ($row['id'] ?? '');
             $users = (int) ($row['user_count'] ?? 0);
-            $clients = $clientsByParent[$id] ?? [];
+            $parentId = (string) ($row['parent_id'] ?? '');
+
+            [$modelValue, $modelLabel] = $this->model($type, $row['operator_subtype'] ?? null, $row['subtype'] ?? null);
+            if ($modelValue !== '') {
+                $models[$modelValue] = $modelLabel;
+            }
+
+            if ($type === 'operator') {
+                $operators++;
+            } elseif ($type === 'client') {
+                $clients++;
+            }
             $userTotal += $users;
 
-            $operators[] = [
+            $tenants[] = [
                 'id' => $id,
                 'name' => (string) ($row['name'] ?? ''),
-                'slug' => $row['slug'] ?? null,
-                'operator_subtype' => $row['operator_subtype'] ?? null,
-                'has_client_layer' => (bool) ($row['has_client_layer'] ?? false),
-                'location' => $row['location'] ?? null,
-                'created_at' => $row['created_at'] ?? null,
+                'slug' => (string) ($row['slug'] ?? ''),
+                'type' => $type,
+                'type_label' => $type === 'operator' ? 'Operator' : 'Client',
+                'model_value' => $modelValue,
+                'model_label' => $modelLabel,
+                'parent_id' => $parentId !== '' ? $parentId : null,
+                'parent_name' => $parentId !== '' ? ($nameById[$parentId] ?? null) : null,
+                'location' => $row['location'] !== null ? (string) $row['location'] : null,
                 'user_count' => $users,
-                'clients' => $clients,
-                'client_count' => count($clients),
+                'client_count' => (int) ($childCount[$id] ?? 0),
+                'created_sort' => (string) ($row['created_at'] ?? ''),
+                'created_label' => $this->formatDate($row['created_at'] ?? null),
             ];
         }
 
-        // Stable, human-friendly ordering.
-        usort($operators, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+        usort($tenants, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+
+        ksort($models);
+        $modelOptions = [];
+        foreach ($models as $value => $label) {
+            $modelOptions[] = ['value' => (string) $value, 'label' => (string) $label];
+        }
 
         return [
-            'operators' => $operators,
-            'summary' => [
-                'operators' => count($operators),
-                'clients' => $clientCount,
+            $tenants,
+            [
+                'operators' => $operators,
+                'clients' => $clients,
                 'users' => $userTotal,
+                'tenants' => count($tenants),
             ],
+            $modelOptions,
         ];
+    }
+
+    /**
+     * Build the detail model for a single tenant's configuration hub.
+     *
+     * @param  array<string,mixed>  $row
+     * @param  array<string,array<string,mixed>>  $byId
+     * @param  array<int,array<string,mixed>>  $rows
+     * @return array<string,mixed>
+     */
+    private function buildTenantDetail(array $row, array $byId, array $rows): array
+    {
+        $id = (string) ($row['id'] ?? '');
+        $type = (string) ($row['type'] ?? '');
+        [$modelValue, $modelLabel] = $this->model($type, $row['operator_subtype'] ?? null, $row['subtype'] ?? null);
+
+        $parentId = (string) ($row['parent_id'] ?? '');
+        $parent = null;
+        if ($parentId !== '' && isset($byId[$parentId])) {
+            $p = $byId[$parentId];
+            $parent = [
+                'id' => $parentId,
+                'name' => (string) ($p['name'] ?? ''),
+                'slug' => (string) ($p['slug'] ?? ''),
+                'is_platform' => (string) ($p['type'] ?? '') === 'platform',
+            ];
+        }
+
+        $children = [];
+        foreach ($rows as $r) {
+            if ((string) ($r['parent_id'] ?? '') !== $id) {
+                continue;
+            }
+            [$cv, $cl] = $this->model((string) ($r['type'] ?? ''), $r['operator_subtype'] ?? null, $r['subtype'] ?? null);
+            $children[] = [
+                'id' => (string) ($r['id'] ?? ''),
+                'name' => (string) ($r['name'] ?? ''),
+                'model_label' => $cl,
+                'location' => $r['location'] !== null ? (string) $r['location'] : null,
+                'user_count' => (int) ($r['user_count'] ?? 0),
+            ];
+        }
+        usort($children, static fn (array $a, array $b): int => strcasecmp($a['name'], $b['name']));
+
+        $slug = (string) ($row['slug'] ?? '');
+        $isOperator = $type === 'operator';
+        $hasClientLayer = (bool) ($row['has_client_layer'] ?? false);
+
+        return [
+            'id' => $id,
+            'name' => (string) ($row['name'] ?? ''),
+            'type' => $type,
+            'type_label' => $isOperator ? 'Operator' : 'Client',
+            'model_value' => $modelValue,
+            'model_label' => $modelLabel,
+            'slug' => $slug,
+            'location' => $row['location'] !== null ? (string) $row['location'] : null,
+            'created_label' => $this->formatDate($row['created_at'] ?? null),
+            'user_count' => (int) ($row['user_count'] ?? 0),
+            'has_client_layer' => $hasClientLayer,
+            'is_operator' => $isOperator,
+            // Routing model (memory: operators on subdomains, clients path-based).
+            'subdomain' => $isOperator && $slug !== '' ? $slug.'.bespokelms.com' : null,
+            'workspace_path' => $slug !== '' ? '/'.$slug : null,
+            'parent' => $parent,
+            'clients' => $children,
+            'client_count' => count($children),
+            'brand_swatches' => $this->brandSwatches($row['brand_theme'] ?? null),
+        ];
+    }
+
+    /**
+     * Map an organisation's type + subtype to a filter value and display label.
+     *
+     * @return array{0:string,1:string}
+     */
+    private function model(string $type, mixed $operatorSubtype, mixed $subtype): array
+    {
+        $raw = $type === 'operator' ? (string) ($operatorSubtype ?? '') : (string) ($subtype ?? '');
+
+        $label = match ($raw) {
+            'reseller' => 'Reseller',
+            'inhouse' => 'In-house',
+            'own_brand' => 'Own brand',
+            'school' => 'School',
+            'trust' => 'Trust',
+            'college' => 'College',
+            'nursery' => 'Nursery',
+            '' => '—',
+            default => Str::of($raw)->replace('_', ' ')->title()->toString(),
+        };
+
+        return [$raw, $label];
+    }
+
+    /**
+     * Extract hex-colour swatches from a tenant's brand_theme jsonb, whatever
+     * its shape. Returns an empty array when no brand kit is configured.
+     *
+     * @return array<int,array{label:string,value:string}>
+     */
+    private function brandSwatches(mixed $brandTheme): array
+    {
+        if (! is_array($brandTheme)) {
+            return [];
+        }
+
+        $swatches = [];
+        $walk = function (array $node, string $prefix) use (&$walk, &$swatches): void {
+            foreach ($node as $key => $value) {
+                if (is_array($value)) {
+                    $walk($value, $prefix === '' ? (string) $key : $prefix.' '.$key);
+                    continue;
+                }
+                if (is_string($value) && preg_match('/^#([0-9a-f]{3}|[0-9a-f]{6})$/i', $value) === 1) {
+                    $label = trim($prefix === '' ? (string) $key : $prefix.' '.$key);
+                    $swatches[] = [
+                        'label' => Str::of($label)->replace(['_', '-'], ' ')->title()->toString(),
+                        'value' => $value,
+                    ];
+                }
+            }
+        };
+        $walk($brandTheme, '');
+
+        return array_slice($swatches, 0, 24);
+    }
+
+    private function formatDate(mixed $raw): string
+    {
+        if (! is_string($raw) || $raw === '') {
+            return '—';
+        }
+
+        try {
+            return Carbon::parse($raw)->format('j M Y');
+        } catch (\Throwable) {
+            return substr($raw, 0, 10);
+        }
     }
 }

@@ -27,8 +27,11 @@ final class SupabaseOrganizations implements ReadsOrganizations
      * `profiles(count)` aggregate embed: Supabase disables aggregate functions
      * in the data API by default, so per-tenant user totals are derived in PHP
      * from a lightweight second read instead (see {@see userCountsByOrg()}).
+     *
+     * `brand_theme` (jsonb) is included so the per-tenant admin page can surface
+     * the tenant's brand kit; the tenants table ignores it.
      */
-    private const ORG_SELECT = 'id,parent_id,type,operator_subtype,has_client_layer,subtype,name,slug,location,created_at';
+    private const ORG_SELECT = 'id,parent_id,type,operator_subtype,has_client_layer,subtype,name,slug,location,brand_theme,created_at';
 
     public function __construct(
         private readonly HttpFactory $http,

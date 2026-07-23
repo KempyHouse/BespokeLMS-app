@@ -5,6 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'Dashboard') · {{ config('app.name') }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    {{-- Supabase-driven design tokens. The resolved token values (platform
+         defaults merged with the current tenant's brand kit) are injected here
+         as CSS custom properties so the token-driven components reskin per
+         tenant. Emitted after the compiled stylesheet so it overrides the
+         @theme defaults; absent when the database is unreachable (defaults
+         then hold). Values are sanitised in App\Support\Theme\ThemeResolver. --}}
+    @if (! empty($brandTokensCss ?? ''))
+        <style id="brand-tokens">:root{ {!! $brandTokensCss !!} }</style>
+    @endif
 </head>
 <body class="min-h-screen bg-paper text-slatecard">
     @php($hdrUser = $user ?? null)
@@ -311,5 +321,8 @@
         });
     })();
     </script>
+
+    {{-- Page/component-pushed scripts (e.g. the reusable data-table behaviour). --}}
+    @stack('scripts')
 </body>
 </html>
