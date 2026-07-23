@@ -77,34 +77,10 @@
             <p>{{ $error }}</p>
         </div>
     @else
-        @if ($selectable)
-            <div data-dt-bulkbar class="mb-3 hidden flex-col gap-3 rounded-panel border border-teachhq/30 bg-teachhq-soft px-4 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-                <div class="flex items-center gap-3">
-                    <span class="text-sm font-semibold text-teachhq-dark"><span data-dt-bulkcount>0</span> selected</span>
-                    <button type="button" data-dt-clear class="text-mini font-semibold text-ink-soft underline-offset-2 transition hover:text-slatecard hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Clear</button>
-                </div>
-                @if (! empty($bulkActions))
-                    <div class="flex flex-wrap items-center gap-2">
-                        @foreach ($bulkActions as $ba)
-                            @if (! empty($ba['disabled']))
-                                <button type="button" disabled
-                                        class="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-1.5 text-mini font-semibold text-ink-soft opacity-70">
-                                    {{ $ba['label'] }}@isset($ba['note']) <span class="font-normal">({{ $ba['note'] }})</span>@endisset
-                                </button>
-                            @else
-                                <button type="button" data-dt-bulk="{{ $ba['key'] ?? $ba['label'] }}"
-                                        class="inline-flex items-center gap-1.5 rounded-control px-3 py-1.5 text-mini font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq focus-visible:ring-offset-1 {{ ! empty($ba['danger']) ? 'border border-rag-red/40 bg-surface text-rag-red hover:bg-rag-red-soft' : 'bg-button-primary text-button-primary-text hover:bg-button-primary-hover' }}">
-                                    {{ $ba['label'] }}
-                                </button>
-                            @endif
-                        @endforeach
-                    </div>
-                @endif
-            </div>
-        @endif
-
-        {{-- Toolbar --}}
-        <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+        {{-- Toolbar. The bulk-action bar overlays this row at the same height when
+             rows are selected, so selecting does not shift the page down. --}}
+        <div class="relative mb-4">
+            <div class="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
             @if ($searchEnabled)
                 <div class="relative min-w-0 flex-1 sm:max-w-xs">
                     <label for="{{ $id }}-search" class="sr-only">{{ $searchPlaceholder }}</label>
@@ -129,9 +105,32 @@
                 </div>
             @endforeach
 
-            <p class="text-mini text-ink-soft sm:ml-auto" data-dt-count aria-live="polite">
-                {{ count($rows) }} {{ count($rows) === 1 ? $countNoun : $nounPlural }}
-            </p>
+            </div>
+            @if ($selectable)
+                <div data-dt-bulkbar class="absolute inset-0 z-10 hidden items-center justify-between gap-3 rounded-control border border-teachhq/30 bg-teachhq-soft px-4">
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm font-semibold text-teachhq-dark"><span data-dt-bulkcount>0</span> selected</span>
+                        <button type="button" data-dt-clear class="text-mini font-semibold text-ink-soft underline-offset-2 transition hover:text-slatecard hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Clear</button>
+                    </div>
+                    @if (! empty($bulkActions))
+                        <div class="flex flex-wrap items-center justify-end gap-2">
+                            @foreach ($bulkActions as $ba)
+                                @if (! empty($ba['disabled']))
+                                    <button type="button" disabled
+                                            class="inline-flex items-center gap-1.5 rounded-control border border-line bg-surface px-3 py-1.5 text-mini font-semibold text-ink-soft opacity-70">
+                                        {{ $ba['label'] }}@isset($ba['note']) <span class="font-normal">({{ $ba['note'] }})</span>@endisset
+                                    </button>
+                                @else
+                                    <button type="button" data-dt-bulk="{{ $ba['key'] ?? $ba['label'] }}"
+                                            class="inline-flex items-center gap-1.5 rounded-control px-3 py-1.5 text-mini font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq focus-visible:ring-offset-1 {{ ! empty($ba['danger']) ? 'border border-rag-red/40 bg-surface text-rag-red hover:bg-rag-red-soft' : 'bg-button-primary text-button-primary-text hover:bg-button-primary-hover' }}">
+                                        {{ $ba['label'] }}
+                                    </button>
+                                @endif
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            @endif
         </div>
 
         @if (count($rows) === 0)
@@ -301,7 +300,6 @@
             var rows = Array.prototype.slice.call(body.querySelectorAll('.dt-row'));
             var searchInput = root.querySelector('[data-dt-search]');
             var filters = Array.prototype.slice.call(root.querySelectorAll('[data-dt-filter]'));
-            var countEl = root.querySelector('[data-dt-count]');
             var emptyEl = root.querySelector('[data-dt-empty]');
             var sortButtons = Array.prototype.slice.call(root.querySelectorAll('[data-dt-sort]'));
             var pagerEl = root.querySelector('[data-dt-pager]');
@@ -360,9 +358,8 @@
                 rows.forEach(function (r) { r.classList.add('hidden'); });
                 pageRows.forEach(function (r) { r.classList.remove('hidden'); body.appendChild(r); });
 
-                if (countEl) { countEl.textContent = filtered.length + ' of ' + total + ' ' + (total === 1 ? nounS : nounP); }
                 if (emptyEl) { emptyEl.classList.toggle('hidden', filtered.length !== 0); }
-                if (rangeEl) { rangeEl.textContent = filtered.length ? ('Showing ' + (start + 1) + '–' + end + ' of ' + filtered.length) : ''; }
+                if (rangeEl) { rangeEl.textContent = filtered.length ? ('Showing ' + (start + 1) + '–' + end + ' of ' + filtered.length + ' ' + (filtered.length === 1 ? nounS : nounP)) : ''; }
                 if (pageInfoEl) { pageInfoEl.textContent = 'Page ' + page + ' of ' + pageCount; }
                 if (prevBtn) prevBtn.disabled = page <= 1;
                 if (nextBtn) nextBtn.disabled = page >= pageCount;
@@ -413,7 +410,7 @@
             function syncBulk() {
                 var n = checkedRows().length;
                 if (bulkCount) bulkCount.textContent = n;
-                if (bulkBar) bulkBar.classList.toggle('hidden', n === 0);
+                if (bulkBar) { bulkBar.classList.toggle('hidden', n === 0); bulkBar.classList.toggle('flex', n > 0); }
             }
             function syncSelectAll() {
                 if (!selectAll) return;
