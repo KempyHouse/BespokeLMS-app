@@ -31,11 +31,11 @@ final class SupabaseDesignTokens implements ReadsDesignTokens
     public function tokens(): array
     {
         $response = $this->safeGet('/rest/v1/design_tokens', [
-            'select' => 'key,css_var,default_value,themeable',
+            'select' => 'key,css_var,default_value,dark_value,themeable',
             'order' => 'sort_order.asc',
         ]);
 
-        /** @var array<int,array{key:string,css_var:string,default_value:string,themeable:bool}> $rows */
+        /** @var array<int,array{key:string,css_var:string,default_value:string,dark_value:?string,themeable:bool}> $rows */
         $rows = $response;
 
         return $rows;

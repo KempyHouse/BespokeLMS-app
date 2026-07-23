@@ -21,9 +21,15 @@
     --color-brand-accent-strong: #0a93c4;
     --color-brand-on-accent: #04141c;
     --color-brand-focus: #7dd3fc;
-    --color-teachhq: #009de1;
-    --color-teachhq-dark: #007bb1;
-    --color-teachhq-soft: #f0f9ff;
+    /* Brand primary (purpose-based; tenant-themeable). The --color-teachhq*
+       names are kept as transitional aliases so existing class references keep
+       resolving until they are migrated to the brand-primary names. */
+    --color-brand-primary: #009de1;
+    --color-brand-primary-dark: #007bb1;
+    --color-brand-primary-soft: #f0f9ff;
+    --color-teachhq: var(--color-brand-primary);
+    --color-teachhq-dark: var(--color-brand-primary-dark);
+    --color-teachhq-soft: var(--color-brand-primary-soft);
     --color-paper: #f4f2ef;
     --color-slatecard: #3d515b;
 

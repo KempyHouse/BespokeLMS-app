@@ -3,9 +3,9 @@
 @section('title', $tenant['name'].' · Platform')
 
 @section('content')
-<div class="flex flex-col items-start gap-6 lg:flex-row lg:items-stretch lg:gap-8">
+<div class="flex flex-col items-start gap-6 lg:flex-row lg:items-start lg:gap-8">
     <!-- Left rail -->
-    <aside class="w-full lg:w-rail lg:flex-none lg:sticky lg:top-24 lg:self-start">
+    <aside class="w-full lg:w-rail lg:flex-none lg:sticky lg:top-20 lg:self-start">
         <x-workspace-switcher active="platform" />
 
         <div class="rounded-control bg-paper p-6">

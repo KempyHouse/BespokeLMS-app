@@ -28,6 +28,8 @@ final class SupabaseUser implements Authenticatable
         public readonly ?string $organizationSlug = null,
         public readonly ?string $organizationType = null,
         public readonly string $themePreference = 'light',
+        public readonly ?string $jobTitle = null,
+        public readonly ?string $avatarPath = null,
     ) {
     }
 
@@ -57,6 +59,8 @@ final class SupabaseUser implements Authenticatable
             organizationSlug: is_array($organisation) && isset($organisation['slug']) ? (string) $organisation['slug'] : null,
             organizationType: is_array($organisation) && isset($organisation['type']) ? (string) $organisation['type'] : null,
             themePreference: isset($profile['theme_preference']) ? (string) $profile['theme_preference'] : 'light',
+            jobTitle: isset($profile['job_title']) ? (string) $profile['job_title'] : null,
+            avatarPath: isset($profile['avatar_path']) ? (string) $profile['avatar_path'] : null,
         );
     }
 
@@ -76,6 +80,8 @@ final class SupabaseUser implements Authenticatable
             organizationSlug: $data['organizationSlug'] ?? null,
             organizationType: $data['organizationType'] ?? null,
             themePreference: (string) ($data['themePreference'] ?? 'light'),
+            jobTitle: $data['jobTitle'] ?? null,
+            avatarPath: $data['avatarPath'] ?? null,
         );
     }
 
@@ -95,7 +101,28 @@ final class SupabaseUser implements Authenticatable
             'organizationSlug' => $this->organizationSlug,
             'organizationType' => $this->organizationType,
             'themePreference' => $this->themePreference,
+            'jobTitle' => $this->jobTitle,
+            'avatarPath' => $this->avatarPath,
         ];
+    }
+
+    /**
+     * Public URL of the uploaded avatar, or null when the user has no image
+     * (the UI then falls back to {@see initials()}). Built from the public
+     * `avatars` Storage bucket.
+     */
+    public function avatarUrl(): ?string
+    {
+        if ($this->avatarPath === null || $this->avatarPath === '') {
+            return null;
+        }
+
+        $base = rtrim((string) config('services.supabase.url'), '/');
+        if ($base === '') {
+            return null;
+        }
+
+        return $base.'/storage/v1/object/public/avatars/'.ltrim($this->avatarPath, '/');
     }
 
     public function isPlatformOwner(): bool

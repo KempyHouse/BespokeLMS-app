@@ -12,10 +12,12 @@ use App\Support\Supabase\Contracts\ReadsOrganizations;
 use App\Support\Supabase\Contracts\ReadsProfiles;
 use App\Support\Supabase\SupabaseAuth;
 use App\Support\Supabase\Contracts\WritesBrandKits;
+use App\Support\Supabase\Contracts\WritesProfiles;
 use App\Support\Supabase\SupabaseBrandKits;
 use App\Support\Supabase\SupabaseDesignTokens;
 use App\Support\Supabase\SupabaseOrganizations;
 use App\Support\Supabase\SupabaseProfiles;
+use App\Support\Supabase\SupabaseProfilesWriter;
 use App\Support\Theme\ThemeResolver;
 use Illuminate\Contracts\Cache\Repository as Cache;
 use Illuminate\Contracts\Foundation\Application;
@@ -93,6 +95,18 @@ class AppServiceProvider extends ServiceProvider
             return new ThemeResolver(
                 $app->make(ReadsDesignTokens::class),
                 $app->make(Cache::class),
+            );
+        });
+
+        $this->app->singleton(WritesProfiles::class, function (Application $app): SupabaseProfilesWriter {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseProfilesWriter(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
             );
         });
     }

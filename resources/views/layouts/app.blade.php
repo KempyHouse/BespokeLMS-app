@@ -1,22 +1,30 @@
+@php($themePref = ($user ?? auth()->user())?->themePreference ?? 'system')
 <!DOCTYPE html>
-<html lang="en" class="antialiased">
+<html lang="en" class="antialiased" data-theme-pref="{{ $themePref }}">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') · {{ config('app.name') }}</title>
+
+    {{-- Resolve light/dark before paint (from the saved preference, or the OS
+         setting when 'system') so there is no flash of the wrong theme. --}}
+    <script>(function(){var el=document.documentElement,p=el.getAttribute('data-theme-pref')||'system',d=p==='dark'||(p==='system'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);el.setAttribute('data-theme',d?'dark':'light');})();</script>
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
-    {{-- Supabase-driven design tokens. The resolved token values (platform
-         defaults merged with the current tenant's brand kit) are injected here
-         as CSS custom properties so the token-driven components reskin per
-         tenant. Emitted after the compiled stylesheet so it overrides the
-         @theme defaults; absent when the database is unreachable (defaults
-         then hold). Values are sanitised in App\Support\Theme\ThemeResolver. --}}
-    @if (! empty($brandTokensCss ?? ''))
-        <style id="brand-tokens">:root{ {!! $brandTokensCss !!} }</style>
+    {{-- Supabase-driven design tokens: platform defaults merged with the tenant
+         brand kit, emitted as CSS variables (light in :root, dark overrides in
+         [data-theme='dark']) after the compiled stylesheet so they win. Absent
+         when the database is unreachable (compiled @theme then holds). Values
+         are sanitised in App\Support\Theme\ThemeResolver. --}}
+    @php($brandLight = $brandTokensCss ?? '')
+    @php($brandDark = $brandTokensDarkCss ?? '')
+    @if ($brandLight !== '' || $brandDark !== '')
+        <style id="brand-tokens">@if ($brandLight !== ''):root{ {!! $brandLight !!} }@endif @if ($brandDark !== '')[data-theme='dark']{ {!! $brandDark !!} }@endif</style>
     @endif
 </head>
-<body class="min-h-screen bg-paper text-slatecard">
+<body class="flex min-h-screen flex-col bg-paper text-slatecard">
     @php($hdrUser = $user ?? null)
 
     <a href="#main"
@@ -102,7 +110,7 @@
         </div>
     </header>
 
-    <main id="main" class="px-4 pb-14 pt-8 sm:px-6 lg:px-12">
+    <main id="main" class="flex-1 px-4 pb-14 pt-8 sm:px-6 lg:px-12">
         @yield('content')
     </main>
 

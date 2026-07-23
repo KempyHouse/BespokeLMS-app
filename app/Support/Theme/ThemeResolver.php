@@ -38,7 +38,17 @@ final class ThemeResolver
      * Build the `:root` declaration body (e.g. "--color-teachhq:#009de1;…") for
      * the given organisation, or an empty string on any problem.
      */
-    public function cssFor(?string $organizationId): string
+    /**
+     * Resolve the effective tokens into light and dark CSS declaration strings,
+     * ready to inject as `:root{…}` and `[data-theme='dark']{…}`.
+     *
+     * Light = platform defaults merged with the tenant's brand-kit overrides.
+     * Dark  = the token's dark_value, EXCEPT a tenant's themeable brand override
+     * carries into dark too, so a tenant's brand colour stays consistent in both.
+     *
+     * @return array{light:string,dark:string}
+     */
+    public function resolve(?string $organizationId): array
     {
         try {
             $contract = $this->cache->remember(
@@ -48,22 +58,7 @@ final class ThemeResolver
             );
 
             if ($contract === []) {
-                return '';
-            }
-
-            $keyToCssVar = [];
-            $themeable = [];
-            $effective = []; // css_var => value
-
-            foreach ($contract as $token) {
-                $key = (string) ($token['key'] ?? '');
-                $cssVar = (string) ($token['css_var'] ?? '');
-                if ($key === '' || ! $this->isSafeVar($cssVar)) {
-                    continue;
-                }
-                $keyToCssVar[$key] = $cssVar;
-                $themeable[$key] = (bool) ($token['themeable'] ?? false);
-                $effective[$cssVar] = $this->sanitiseValue((string) ($token['default_value'] ?? ''));
+                return ['light' => '', 'dark' => ''];
             }
 
             $overrides = $organizationId !== null && $organizationId !== ''
@@ -74,32 +69,64 @@ final class ThemeResolver
                 )
                 : [];
 
+            $overrideByKey = [];
             foreach ($overrides as $row) {
-                $key = (string) ($row['token_key'] ?? '');
-                // A brand kit may only reskin tokens flagged themeable.
-                if (! isset($keyToCssVar[$key]) || empty($themeable[$key])) {
-                    continue;
-                }
-                $value = $this->sanitiseValue((string) ($row['value'] ?? ''));
-                if ($value !== '') {
-                    $effective[$keyToCssVar[$key]] = $value;
+                $k = (string) ($row['token_key'] ?? '');
+                $v = $this->sanitiseValue((string) ($row['value'] ?? ''));
+                if ($k !== '' && $v !== '') {
+                    $overrideByKey[$k] = $v;
                 }
             }
 
-            $declarations = '';
-            foreach ($effective as $cssVar => $value) {
-                if ($value === '') {
+            $light = [];
+            $dark = [];
+
+            foreach ($contract as $token) {
+                $key = (string) ($token['key'] ?? '');
+                $cssVar = (string) ($token['css_var'] ?? '');
+                if ($key === '' || ! $this->isSafeVar($cssVar)) {
                     continue;
                 }
-                $declarations .= $cssVar.':'.$value.';';
+                $themeable = (bool) ($token['themeable'] ?? false);
+                $default = $this->sanitiseValue((string) ($token['default_value'] ?? ''));
+                $darkValue = $this->sanitiseValue((string) ($token['dark_value'] ?? ''));
+                $tenant = ($themeable && isset($overrideByKey[$key])) ? $overrideByKey[$key] : null;
+
+                $lightVal = $tenant ?? $default;
+                if ($lightVal !== '') {
+                    $light[$cssVar] = $lightVal;
+                }
+
+                $darkVal = $tenant ?? ($darkValue !== '' ? $darkValue : null);
+                if ($darkVal !== null && $darkVal !== '') {
+                    $dark[$cssVar] = $darkVal;
+                }
             }
 
-            return $declarations;
+            return [
+                'light' => $this->declarations($light),
+                'dark' => $this->declarations($dark),
+            ];
         } catch (Throwable $e) {
             report($e);
 
-            return '';
+            return ['light' => '', 'dark' => ''];
         }
+    }
+
+    /**
+     * @param  array<string,string>  $map
+     */
+    private function declarations(array $map): string
+    {
+        $out = '';
+        foreach ($map as $cssVar => $value) {
+            if ($value !== '') {
+                $out .= $cssVar.':'.$value.';';
+            }
+        }
+
+        return $out;
     }
 
     /**
