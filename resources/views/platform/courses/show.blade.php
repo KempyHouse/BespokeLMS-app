@@ -44,6 +44,7 @@
                     <a href="#{{ $anchor }}" class="rounded-control px-2 py-1.5 font-medium text-slatecard transition hover:bg-surface hover:text-teachhq focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">{{ $label }}</a>
                 @endforeach
                 <a href="{{ route('platform.courses.pricing', $course['id']) }}" class="rounded-control px-2 py-1.5 font-medium text-slatecard transition hover:bg-surface hover:text-teachhq focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Pricing &amp; retakes</a>
+                <a href="{{ route('platform.courses.availability', $course['id']) }}" class="rounded-control px-2 py-1.5 font-medium text-slatecard transition hover:bg-surface hover:text-teachhq focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Availability &amp; authors</a>
             </nav>
         </div>
     </aside>

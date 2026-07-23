@@ -97,6 +97,9 @@ Route::middleware('auth')->group(function (): void {
             // Course pricing & retake/retry policy editor (migration 007).
             Route::get('courses/{course}/pricing', [CourseEditorController::class, 'editPricing'])->name('courses.pricing');
             Route::put('courses/{course}/pricing', [CourseEditorController::class, 'updatePricing'])->name('courses.pricing.update');
+            // Course availability (territories) & author credits (migration 007).
+            Route::get('courses/{course}/availability', [CourseEditorController::class, 'editAvailability'])->name('courses.availability');
+            Route::put('courses/{course}/availability', [CourseEditorController::class, 'updateAvailability'])->name('courses.availability.update');
 
             // Widget Library — the dashboard widget catalogue: which roles may
             // add each widget, its status, and its default size. Saving requires

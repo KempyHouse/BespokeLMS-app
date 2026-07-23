@@ -16,6 +16,7 @@ use App\Support\Supabase\Contracts\ReadsDesignTokens;
 use App\Support\Supabase\Contracts\ReadsEmailIntegrations;
 use App\Support\Supabase\Contracts\ReadsLearnerCatalogue;
 use App\Support\Supabase\Contracts\WritesCoursePricing;
+use App\Support\Supabase\Contracts\WritesCourseAvailability;
 use App\Support\Supabase\Contracts\WritesCourses;
 use App\Support\Supabase\Contracts\ReadsOrganizations;
 use App\Support\Supabase\Contracts\ReadsProfiles;
@@ -35,6 +36,7 @@ use App\Support\Supabase\SupabaseDesignTokens;
 use App\Support\Supabase\SupabaseEmailIntegrations;
 use App\Support\Supabase\SupabaseLearnerCatalogue;
 use App\Support\Supabase\SupabaseCoursePricingWriter;
+use App\Support\Supabase\SupabaseCourseAvailabilityWriter;
 use App\Support\Supabase\SupabaseCoursesWriter;
 use App\Support\Supabase\SupabaseOrganizations;
 use App\Support\Supabase\SupabaseProfiles;
@@ -123,6 +125,18 @@ class AppServiceProvider extends ServiceProvider
             $config = $app['config']->get('services.supabase', []);
 
             return new SupabaseCoursePricingWriter(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+
+        $this->app->singleton(WritesCourseAvailability::class, function (Application $app): SupabaseCourseAvailabilityWriter {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseCourseAvailabilityWriter(
                 $app->make(HttpFactory::class),
                 (string) ($config['url'] ?? ''),
                 (string) ($config['service_role_key'] ?? ''),

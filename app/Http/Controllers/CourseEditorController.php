@@ -6,7 +6,9 @@ namespace App\Http\Controllers;
 
 use App\Auth\SupabaseUser;
 use App\Http\Requests\UpdateCoursePricingRequest;
+use App\Http\Requests\UpdateCourseAvailabilityRequest;
 use App\Support\Supabase\Contracts\WritesCoursePricing;
+use App\Support\Supabase\Contracts\WritesCourseAvailability;
 use App\Support\Supabase\Exceptions\SupabaseAuthException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -70,6 +72,47 @@ final class CourseEditorController extends Controller
 
         return redirect()->route('platform.courses.pricing', $course)
             ->with('status', 'Pricing saved.');
+    }
+
+    /**
+     * The availability & authors editor — which territories the course is sold
+     * in (`course_territories`) and who is credited on it (`course_authors`).
+     */
+    public function editAvailability(Request $request, string $course): View
+    {
+        /** @var SupabaseUser $user */
+        $user = $request->user();
+
+        $row = $this->loadCourse($course);
+        if ($row === null) {
+            abort(404);
+        }
+
+        return view('platform.courses.availability', [
+            'user' => $user,
+            'course' => $row,
+            'territories' => $this->allTerritories(),
+            'selectedTerritoryIds' => $this->courseTerritoryIds($course),
+            'authors' => $this->courseAuthors($course),
+            'profileOptions' => $this->profileOptions(),
+        ]);
+    }
+
+    public function updateAvailability(UpdateCourseAvailabilityRequest $request, WritesCourseAvailability $writer, string $course): RedirectResponse
+    {
+        try {
+            $writer->replaceTerritories($course, $request->territoryIds());
+            $writer->replaceAuthors($course, $request->authors());
+        } catch (SupabaseAuthException $e) {
+            report($e);
+
+            return redirect()->route('platform.courses.availability', $course)
+                ->withInput()
+                ->with('editorError', 'Availability could not be saved right now. Please try again shortly.');
+        }
+
+        return redirect()->route('platform.courses.availability', $course)
+            ->with('status', 'Availability & authors saved.');
     }
 
     /**
@@ -174,6 +217,126 @@ final class CourseEditorController extends Controller
         }
 
         return $rows[0] ?? null;
+    }
+
+    /**
+     * The full territory vocabulary (owner-managed; may be empty until seeded),
+     * ordered for display and grouped by parent in the view.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    private function allTerritories(): array
+    {
+        try {
+            $response = $this->req()->get('/rest/v1/territories', [
+                'select' => 'id,parent_id,code,name,sort',
+                'order' => 'sort.asc,name.asc',
+            ]);
+            if (! $response->successful()) {
+                return [];
+            }
+
+            return $response->json() ?? [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * The territory UUIDs this course is currently available in.
+     *
+     * @return array<int,string>
+     */
+    private function courseTerritoryIds(string $courseId): array
+    {
+        try {
+            $response = $this->req()->get('/rest/v1/course_territories', [
+                'select' => 'territory_id',
+                'course_id' => 'eq.'.$courseId,
+            ]);
+            if (! $response->successful()) {
+                return [];
+            }
+            $rows = $response->json() ?? [];
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($rows as $r) {
+            $id = (string) ($r['territory_id'] ?? '');
+            if ($id !== '') {
+                $out[] = $id;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * This course's author credits, ordered for display.
+     *
+     * @return array<int,array<string,mixed>>
+     */
+    private function courseAuthors(string $courseId): array
+    {
+        try {
+            $response = $this->req()->get('/rest/v1/course_authors', [
+                'select' => 'id,profile_id,display_name,credit_label,sort',
+                'course_id' => 'eq.'.$courseId,
+                'order' => 'sort.asc',
+            ]);
+            if (! $response->successful()) {
+                return [];
+            }
+
+            return $response->json() ?? [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /**
+     * Internal staff who can be credited as an author, as {value,label} pairs.
+     *
+     * @return array<int,array{value:string,label:string}>
+     */
+    private function profileOptions(): array
+    {
+        try {
+            $response = $this->req()->get('/rest/v1/profiles', [
+                'select' => 'id,full_name,first_name,last_name,job_title',
+                'order' => 'full_name.asc',
+                'limit' => '500',
+            ]);
+            if (! $response->successful()) {
+                return [];
+            }
+            $rows = $response->json() ?? [];
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $out = [];
+        foreach ($rows as $r) {
+            $id = (string) ($r['id'] ?? '');
+            if ($id === '') {
+                continue;
+            }
+            $name = trim((string) ($r['full_name'] ?? ''));
+            if ($name === '') {
+                $name = trim(((string) ($r['first_name'] ?? '')).' '.((string) ($r['last_name'] ?? '')));
+            }
+            if ($name === '') {
+                $name = 'Unnamed profile';
+            }
+            $job = trim((string) ($r['job_title'] ?? ''));
+            $label = $job !== '' ? "{$name} — {$job}" : $name;
+
+            $out[] = ['value' => $id, 'label' => $label];
+        }
+
+        return $out;
     }
 
     private function req(): \Illuminate\Http\Client\PendingRequest
