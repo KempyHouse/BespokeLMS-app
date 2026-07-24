@@ -147,7 +147,7 @@
                          - label (the widget name)
                     --}}
                     @includeUnless($w['component'] === '',
-                        'components.widgets.' . $w['component'],
+                        'components.' . $w['component'],
                         [
                             'active' => $placed,
                             'data' => $metrics[$key] ?? [],

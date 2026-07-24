@@ -30,7 +30,7 @@ use Illuminate\View\View;
 final class CourseController extends Controller
 {
     use \App\Http\Controllers\Mixins\CourseStatusLogic;
-{
+
     /**
      * Global Courses index — the full catalogue as one sortable/filterable table.
      */
@@ -621,71 +621,4 @@ final class CourseController extends Controller
             ->withToken($key);
     }
 
-    /**
-     * Load a course by ID.
-     *
-     * @return array<string,mixed>|null
-     */
-    private function loadCourse(string $courseId): ?array
-    {
-        $rows = $this->get('/rest/v1/courses', [
-            'select' => 'id,title,description,aims,aims_short,objectives_short,slug,status',
-            'id' => 'eq.'.$courseId,
-        ]);
-
-        return $rows[0] ?? null;
-    }
-
-    /**
-     * Get latest version of a course.
-     *
-     * @return array<string,mixed>|null
-     */
-    private function latestVersion(string $courseId): ?array
-    {
-        $rows = $this->get('/rest/v1/course_versions', [
-            'select' => 'id,version_no,semver,status',
-            'course_id' => 'eq.'.$courseId,
-            'order' => 'version_no.desc',
-            'limit' => '1',
-        ]);
-
-        return $rows[0] ?? null;
-    }
-
-    /**
-     * Make a GET request to Supabase PostgREST API.
-     *
-     * @param  array<string,mixed>  $query
-     * @return array<int,array<string,mixed>>
-     */
-    private function get(string $path, array $query): array
-    {
-        try {
-            $response = $this->req()->get($path, $query);
-            if (! $response->successful()) {
-                return [];
-            }
-
-            return $response->json() ?? [];
-        } catch (\Throwable) {
-            return [];
-        }
-    }
-
-    /**
-     * Get a configured HTTP client for Supabase API calls.
-     */
-    private function req(): \Illuminate\Http\Client\PendingRequest
-    {
-        /** @var array<string,mixed> $config */
-        $config = config('services.supabase', []);
-        $key = (string) ($config['service_role_key'] ?? '');
-
-        return \Illuminate\Support\Facades\Http::baseUrl((string) ($config['url'] ?? ''))
-            ->timeout((int) ($config['timeout'] ?? 10))
-            ->acceptJson()
-            ->withHeaders(['apikey' => $key])
-            ->withToken($key);
-    }
 }
