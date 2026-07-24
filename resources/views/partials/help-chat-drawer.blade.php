@@ -2,7 +2,7 @@
      Interim placeholder assistant: wire to real support / AI chat in a later pass. --}}
 <div id="chatOverlay" onclick="closeChat()" class="app-drawer-overlay" aria-hidden="true"></div>
 <aside id="chatPanel" class="app-drawer" role="dialog" aria-modal="true" aria-label="Help chat" aria-hidden="true">
-    <div class="flex items-start justify-between gap-3 bg-teachhq px-5 py-4 text-on-brand">
+    <div class="flex items-center justify-between gap-3 bg-teachhq px-5 text-on-brand" style="height: var(--height-header);">
         <div class="flex items-center gap-3">
             <span class="flex h-10 w-10 flex-none items-center justify-center rounded-full bg-on-brand/20 text-sm font-black" aria-hidden="true">B</span>
             <div>

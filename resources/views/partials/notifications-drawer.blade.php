@@ -2,7 +2,7 @@
      Interim placeholder content: wire to the notifications / ideas / roadmap tables in the DB-driven pass. --}}
 <div id="notifOverlay" onclick="closeNotifications()" class="app-drawer-overlay" aria-hidden="true"></div>
 <aside id="notifPanel" class="app-drawer" role="dialog" aria-modal="true" aria-label="Notifications" aria-hidden="true">
-    <div class="flex h-15 items-center justify-between border-b border-line-soft px-5">
+    <div class="flex items-center justify-between border-b border-line-soft px-5" style="height: var(--height-header);">
         <div class="min-w-0">
             <h2 id="notifTitle" class="text-base font-black leading-tight text-slatecard">Notifications</h2>
             <p id="notifSub" class="text-mini leading-tight text-ink-soft"><span id="notifUnreadCount">4</span> unread</p>

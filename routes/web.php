@@ -97,6 +97,10 @@ Route::middleware('auth')->group(function (): void {
             Route::get('courses/{course}', [CourseController::class, 'show'])->name('courses.show');
             // Save the course-details editor (catalogue/marketing/commercial fields).
             Route::put('courses/{course}', [CourseController::class, 'update'])->name('courses.update');
+
+            // Platform course editor — Slice 9 (status action buttons)
+            Route::get('platform/courses/{course}/edit', [CourseController::class, 'edit'])->name('platform.courses.edit');
+            Route::put('platform/courses/{course}', [CourseController::class, 'updateCourseEditor'])->name('platform.courses.update');
             // Course pricing & retake/retry policy editor (migration 007).
             Route::get('courses/{course}/pricing', [CourseEditorController::class, 'editPricing'])->name('courses.pricing');
             Route::put('courses/{course}/pricing', [CourseEditorController::class, 'updatePricing'])->name('courses.pricing.update');
