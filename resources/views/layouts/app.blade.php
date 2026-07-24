@@ -54,6 +54,34 @@
 
             <!-- Header actions -->
             <div class="ml-auto flex items-center gap-2.5 lg:ml-0">
+            @php
+                $qaRole = $hdrUser?->role;
+                $quickActions = array_values(array_filter([
+                    ['label' => 'Send email', 'href' => null, 'roles' => ['bespokelms_owner', 'lms_operator_admin', 'client_admin'],
+                     'icon' => '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>'],
+                ], static fn ($qa) => $qaRole !== null && in_array($qaRole, $qa['roles'], true)));
+            @endphp
+            @if (! empty($quickActions))
+            <!-- Quick actions -->
+            <div class="relative" data-quick-menu>
+                <button type="button" aria-haspopup="menu" aria-expanded="false" data-quick-toggle aria-label="Quick actions"
+                        class="inline-flex h-9 w-9 items-center justify-center rounded-control bg-paper text-ink-muted transition hover:bg-line hover:text-slatecard focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-1">
+                    <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                </button>
+                <div role="menu" aria-label="Quick actions" data-quick-panel
+                     class="absolute right-0 top-full z-50 mt-2 hidden w-menu rounded-panel border border-line bg-surface p-2 shadow-panel">
+                    <div class="px-2.5 pb-1 pt-1 text-nano font-bold uppercase tracking-wider text-ink-faint">Quick actions</div>
+                    @foreach ($quickActions as $qa)
+                        <button type="button" role="menuitem" data-quick-action="{{ \Illuminate\Support\Str::slug($qa['label']) }}"
+                                class="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-sm text-slatecard transition hover:bg-paper focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">
+                            <svg class="h-icon w-icon flex-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{!! $qa['icon'] !!}</svg>
+                            {{ $qa['label'] }}
+                        </button>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             <!-- Help chat -->
             <button type="button" id="chatBtn" onclick="toggleChat()" aria-haspopup="dialog" aria-expanded="false" aria-controls="chatPanel" aria-label="Help chat"
                     class="inline-flex h-9 w-9 items-center justify-center rounded-control bg-paper text-ink-muted transition hover:bg-line hover:text-slatecard focus:outline-none focus:ring-2 focus:ring-teachhq focus:ring-offset-1">
@@ -162,6 +190,40 @@
 
     @include('partials.notifications-drawer')
     @include('partials.help-chat-drawer')
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const menu = document.querySelector('[data-quick-menu]');
+        if (!menu) return;
+        const toggle = menu.querySelector('[data-quick-toggle]');
+        const panel = menu.querySelector('[data-quick-panel]');
+
+        function close() {
+            panel.classList.add('hidden');
+            toggle.setAttribute('aria-expanded', 'false');
+        }
+        function open() {
+            panel.classList.remove('hidden');
+            toggle.setAttribute('aria-expanded', 'true');
+        }
+
+        toggle.addEventListener('click', function (e) {
+            e.stopPropagation();
+            panel.classList.contains('hidden') ? open() : close();
+        });
+        document.addEventListener('click', function (e) {
+            if (!menu.contains(e.target)) close();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') close();
+        });
+
+        // Quick-action items are placeholders for now — no navigation yet.
+        menu.querySelectorAll('[data-quick-action]').forEach(function (btn) {
+            btn.addEventListener('click', function () { close(); });
+        });
+    });
+    </script>
 
     <script>
     document.addEventListener('DOMContentLoaded', function () {
