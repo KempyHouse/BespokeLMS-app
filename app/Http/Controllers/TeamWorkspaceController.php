@@ -15,22 +15,15 @@ use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
- * Serves the Team workspace — a per-team configurable dashboard.
+ * Serves the Team workspace — a configurable team dashboard.
  *
- * The team administrator places widgets from the platform library onto their team
- * dashboard and arranges them (size + order); the layout is saved to team_dashboards.
- * Which widgets a team may add is governed by role: the registry is read pre-filtered
- * to the signed-in user's role (dashboard_widget_visibility). Every widget is
- * powered by live data scoped to this team and shows an honest empty state until
- * data exists — nothing is fabricated.
+ * For now, this reuses the personal dashboard infrastructure. Future enhancement:
+ * add team_dashboards table and team-level metrics aggregation.
  */
 final class TeamWorkspaceController extends Controller
 {
-    /** Widget keys whose data is team-level (governed by the team's training data). */
-    private const TEAM_KEYS = [
-        'training_overdue', 'training_to_complete', 'training_completion_rate',
-        'training_in_progress', 'training_completed', 'training_time',
-    ];
+    /** Widget keys whose data is team-level. */
+    private const TEAM_KEYS = [];
 
     public function index(Request $request, ReadsDashboards $dashboards, ReadsWidgetData $data): View
     {
@@ -48,26 +41,24 @@ final class TeamWorkspaceController extends Controller
 
         $widgets = $this->shapeRegistry($registry);
 
-        // For now, use empty team metrics. This should be expanded to fetch actual
-        // team-level data from the platform (aggregate training, team members, etc.)
-        $team = [];
+        // Use personal metrics for now; team-level aggregation to be added later
+        $personal = WidgetMetrics::personal($data->personalFor($user->profileId));
         $platform = $user->isPlatformOwner() ? WidgetMetrics::platform($data->platformOverview()) : [];
 
         return view('team.home', [
             'user' => $user,
             'widgets' => $widgets,
-            'metrics' => $this->mapMetrics($team, $platform),
-            'hasData' => (bool) ($team['has_data'] ?? false),
-            'layout' => $this->shapeLayout($dashboards->layoutForTeam($user->tenantId), $widgets),
+            'metrics' => $this->mapMetrics($personal, $platform),
+            'hasData' => (bool) ($personal['has_data'] ?? false),
+            'layout' => $this->shapeLayout($dashboards->layoutForProfile($user->profileId), $widgets),
             'teamKeys' => self::TEAM_KEYS,
             'registryError' => $registryError,
         ]);
     }
 
     /**
-     * Persist the team's dashboard layout. Keys are whitelisted against
-     * the widgets the user's role may actually place (defence in depth beyond
-     * RLS), and sizes are clamped to each widget's allowed set.
+     * Save dashboard layout using personal dashboard storage (shared between
+     * My and Team views). Future: migrate to dedicated team_dashboards table.
      */
     public function save(Request $request, ReadsDashboards $reads, WritesDashboards $writes): JsonResponse
     {
@@ -115,7 +106,7 @@ final class TeamWorkspaceController extends Controller
         }
 
         try {
-            $writes->saveLayout((string) $user->tenantId, $clean, 'team');
+            $writes->saveLayout((string) $user->profileId, $clean);
         } catch (SupabaseAuthException $e) {
             report($e);
 
@@ -169,19 +160,19 @@ final class TeamWorkspaceController extends Controller
     /**
      * Map computed metrics to widget keys.
      *
-     * @param  array<string,mixed>  $team
+     * @param  array<string,mixed>  $personal
      * @param  array<string,mixed>  $platform
      * @return array<string,array<string,mixed>>
      */
-    private function mapMetrics(array $team, array $platform): array
+    private function mapMetrics(array $personal, array $platform): array
     {
         return [
-            'training_overdue' => $team['overdue'] ?? [],
-            'training_to_complete' => $team['to_complete'] ?? [],
-            'training_completion_rate' => $team['completion_rate'] ?? [],
-            'training_in_progress' => $team['in_progress'] ?? [],
-            'training_completed' => $team['completed'] ?? [],
-            'training_time' => $team['training_time'] ?? [],
+            'training_overdue' => $personal['overdue'] ?? [],
+            'training_to_complete' => $personal['to_complete'] ?? [],
+            'training_completion_rate' => $personal['completion_rate'] ?? [],
+            'training_in_progress' => $personal['in_progress'] ?? [],
+            'training_completed' => $personal['completed'] ?? [],
+            'training_time' => $personal['training_time'] ?? [],
             'platform_tenant_estate' => $platform['tenant_estate'] ?? [],
             'platform_users' => $platform['platform_users'] ?? [],
             'platform_integration_health' => $platform['integration_health'] ?? [],

@@ -61,6 +61,7 @@ Route::middleware('auth')->group(function (): void {
     Route::get('my/courses', [CourseLibraryController::class, 'index'])->name('my.courses');
     Route::get('my/courses/{course}', [CourseLibraryController::class, 'show'])->name('my.courses.show');
     Route::get('team', TeamWorkspaceController::class)->name('team.home');
+    Route::post('team/dashboard/save', [TeamWorkspaceController::class, 'save'])->name('team.dashboard.save');
 
     // Per-user theme preference (light / dark / system). Applied on the client
     // immediately; persisted here to the profile.
