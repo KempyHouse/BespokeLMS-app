@@ -25,7 +25,7 @@ final class SupabaseCoursesWriter implements WritesCourses
     ) {
     }
 
-    public function updateDetails(string $courseId, array $fields): void
+    public function updateCourse(string $courseId, array $fields): void
     {
         if ($this->serviceRoleKey === '') {
             throw new SupabaseAuthException('The Supabase service-role key is not configured, so the course cannot be saved.');
@@ -52,6 +52,22 @@ final class SupabaseCoursesWriter implements WritesCourses
         if (! $response->successful()) {
             throw new SupabaseAuthException("Saving the course failed (HTTP {$response->status()}).", $response->status());
         }
+    }
+
+    /**
+     * Transitional alias kept so the currently-deployed course-details
+     * controller (which calls updateDetails()) keeps working while the contract
+     * standardises on updateCourse(). Remove once every caller uses updateCourse().
+     *
+     * @param  array<string,mixed>  $fields
+     *
+     * @throws SupabaseAuthException
+     *
+     * @deprecated Use {@see updateCourse()} instead.
+     */
+    public function updateDetails(string $courseId, array $fields): void
+    {
+        $this->updateCourse($courseId, $fields);
     }
 
     private function request(): PendingRequest
