@@ -37,6 +37,9 @@ use App\Support\Supabase\SupabaseBrandKits;
 use App\Support\Supabase\SupabaseCourses;
 use App\Support\Supabase\SupabaseDesignTokens;
 use App\Support\Supabase\SupabaseEmailIntegrations;
+use App\Support\Supabase\Contracts\ReadsOutboundTemplates;
+use App\Support\Supabase\Contracts\WritesOutboundTemplates;
+use App\Support\Supabase\SupabaseOutboundTemplates;
 use App\Support\Supabase\SupabaseLearnerCatalogue;
 use App\Support\Supabase\SupabaseCoursePricingWriter;
 use App\Support\Supabase\SupabaseCourseAvailabilityWriter;
@@ -260,6 +263,23 @@ class AppServiceProvider extends ServiceProvider
         });
         $this->app->bind(ReadsEmailIntegrations::class, SupabaseEmailIntegrations::class);
         $this->app->bind(WritesEmailIntegrations::class, SupabaseEmailIntegrations::class);
+
+        // Outbound communication templates (owner-level template library). One
+        // service-role client implements both the read and write contracts,
+        // mirroring the email-integration slice above.
+        $this->app->singleton(SupabaseOutboundTemplates::class, function (Application $app): SupabaseOutboundTemplates {
+            /** @var array<string,mixed> $config */
+            $config = $app['config']->get('services.supabase', []);
+
+            return new SupabaseOutboundTemplates(
+                $app->make(HttpFactory::class),
+                (string) ($config['url'] ?? ''),
+                (string) ($config['service_role_key'] ?? ''),
+                (int) ($config['timeout'] ?? 10),
+            );
+        });
+        $this->app->bind(ReadsOutboundTemplates::class, SupabaseOutboundTemplates::class);
+        $this->app->bind(WritesOutboundTemplates::class, SupabaseOutboundTemplates::class);
 
         // Audit trail writer (service-role; best-effort append-only logging).
         $this->app->singleton(WritesAuditLog::class, function (Application $app): SupabaseAuditLog {

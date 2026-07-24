@@ -15,6 +15,7 @@ use App\Http\Controllers\CourseLibraryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EmailIntegrationController;
 use App\Http\Controllers\MyWorkspaceController;
+use App\Http\Controllers\OutboundController;
 use App\Http\Controllers\PlatformController;
 use App\Http\Controllers\PreferencesController;
 use App\Http\Controllers\ProfileController;
@@ -159,5 +160,13 @@ Route::middleware('auth')->group(function (): void {
             Route::post('email/test', [EmailIntegrationController::class, 'test'])
                 ->middleware('platform.sudo')
                 ->name('email.test');
+
+            // Outbound — platform-owner communications hub (Phase 1: system emails).
+            Route::get('outbound', [OutboundController::class, 'index'])->name('outbound');
+            Route::get('outbound/system-emails', [OutboundController::class, 'systemEmails'])->name('outbound.system-emails');
+            Route::get('outbound/system-emails/{key}', [OutboundController::class, 'editSystemEmail'])->name('outbound.system-emails.edit');
+            Route::put('outbound/system-emails/{key}', [OutboundController::class, 'updateSystemEmail'])
+                ->middleware('platform.sudo')
+                ->name('outbound.system-emails.update');
         });
 });

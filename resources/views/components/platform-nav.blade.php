@@ -16,6 +16,8 @@
              'icon' => '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/>'],
             ['key' => 'widgets', 'label' => 'Widget Library', 'href' => route('platform.widgets'),
              'icon' => '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>'],
+            ['key' => 'outbound', 'label' => 'Outbound', 'href' => route('platform.outbound'),
+             'icon' => '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>'],
         ],
         'Integrations' => [
             ['key' => 'ai', 'label' => 'AI &amp; Voice', 'href' => route('platform.ai'),
