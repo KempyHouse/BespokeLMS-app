@@ -135,12 +135,19 @@ final class AiIntegrationController extends Controller
     public function update(
         Request $request,
         ReadsAiIntegrations $reads,
-        WritesAiIntegrations $writes,
         WritesAuditLog $audit,
         string $integration
     ): RedirectResponse {
         /** @var SupabaseUser $user */
         $user = $request->user();
+
+        // Resolve the writer from the container rather than method-injecting it:
+        // SupabaseAiIntegrations satisfies both the Reads and Writes contracts, so
+        // Laravel's route-dependency resolver injects that shared instance only once —
+        // a second same-instance parameter would otherwise be filled by the route id
+        // (a string), which is the "$writes ... string given" TypeError. Resolving here
+        // sidesteps that.
+        $writes = app(WritesAiIntegrations::class);
 
         // Confirm the id is an owner-level integration before writing.
         try {

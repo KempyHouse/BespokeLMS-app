@@ -11,7 +11,7 @@
         <div class="rounded-control bg-paper p-6">
             <p class="mt-3 text-xs font-bold uppercase tracking-wider text-teachhq">Owner configuration</p>
             <h1 class="mt-1 text-xl font-black text-slatecard">Email Integration</h1>
-            <p class="mt-2 text-caption text-ink-soft">The email transport is configured once here and inherited by every tenant. The enabled provider is the platform default; secrets are encrypted before they are stored and are never shown again.</p>
+            <p class="mt-2 text-caption text-ink-soft">Secrets are encrypted before storage and never shown again.</p>
         </div>
     </aside>
 
@@ -25,7 +25,7 @@
         <div class="mb-6">
             <p class="text-xs font-bold uppercase tracking-wider text-teachhq">BespokeLMS &middot; Platform owner</p>
             <h2 class="mt-1 text-2xl font-black text-slatecard">Email delivery</h2>
-            <p class="mt-2 max-w-2xl text-sm text-ink-soft">Connect the service that sends the platform's email. Enable one provider as the default transport; the others stay available so you can <span class="text-teachhq">switch provider without code changes</span>. Tenants send on this transport as their own sender identity, set per tenant.</p>
+            <p class="mt-2 max-w-2xl text-sm text-ink-soft">Connect the service that sends the platform's email. It's set once here and inherited by every tenant: enable one provider as the default transport, and keep the others ready so you can <span class="text-teachhq">switch without code changes</span>.</p>
         </div>
 
         <div class="mb-6 flex flex-wrap items-center gap-3 rounded-panel border border-line bg-surface p-4">
@@ -83,7 +83,6 @@
             <section class="mb-8">
                 <div class="mb-3">
                     <h3 class="text-lg font-black text-slatecard">Transport providers</h3>
-                    <p class="mt-1 max-w-2xl text-caption text-ink-soft">One provider is the platform default; the others stay available as alternatives. Enable a different card and add its key to switch provider.</p>
                 </div>
 
                 <div class="grid grid-cols-1 gap-4 xl:grid-cols-2">
