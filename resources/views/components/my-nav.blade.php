@@ -19,10 +19,6 @@
              'icon' => '<path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c0 1 2 3 6 3s6-2 6-3v-5"/>'],
             ['key' => 'my-certificates', 'label' => 'My Certificates', 'soon' => true,
              'icon' => '<circle cx="12" cy="8" r="6"/><path d="M8.5 13.5 7 22l5-3 5 3-1.5-8.5"/>'],
-            ['key' => 'my-account', 'label' => 'My Account', 'href' => route('profile.edit'),
-             'icon' => '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>'],
-            ['key' => 'my-business', 'label' => 'My Business', 'soon' => true,
-             'icon' => '<rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M16 6h.01M12 6h.01M12 10h.01M16 10h.01M8 10h.01M12 14h.01M16 14h.01M8 14h.01"/>'],
         ],
         'Browse' => [
             ['key' => 'course-library', 'label' => 'Course Library', 'href' => route('my.courses'),

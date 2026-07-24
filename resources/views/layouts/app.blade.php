@@ -115,20 +115,6 @@
                         Notification settings
                         <span class="ml-auto rounded-full bg-line-soft px-1.5 py-0.5 text-nano font-semibold text-ink-soft">Soon</span>
                     </span>
-
-                    {{-- Theme (live) --}}
-                    <div class="px-2.5 py-2" data-theme-endpoint="{{ route('preferences.theme') }}">
-                        <div class="mb-1.5 flex items-center gap-2 text-nano font-bold uppercase tracking-wider text-ink-faint">
-                            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-                            Theme
-                        </div>
-                        <div class="grid grid-cols-3 gap-1 rounded-control border border-line bg-paper p-1" role="group" aria-label="Theme preference">
-                            <button type="button" data-theme-set="light" class="theme-opt rounded-lg py-1.5 text-mini font-semibold text-ink-soft transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Light</button>
-                            <button type="button" data-theme-set="dark" class="theme-opt rounded-lg py-1.5 text-mini font-semibold text-ink-soft transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">Dark</button>
-                            <button type="button" data-theme-set="system" class="theme-opt rounded-lg py-1.5 text-mini font-semibold text-ink-soft transition focus:outline-none focus-visible:ring-2 focus-visible:ring-teachhq">System</button>
-                        </div>
-                    </div>
-
                     <div class="my-1.5 h-px bg-line-soft"></div>
 
                     {{-- Account --}}
