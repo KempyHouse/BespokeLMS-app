@@ -4,24 +4,11 @@
 
 @section('content')
 <div class="flex flex-col items-start gap-6 lg:flex-row lg:items-start lg:gap-8">
-    <!-- Left rail -->
-    <aside class="w-full lg:w-rail lg:flex-none rail-sticky">
-        <x-workspace-switcher active="platform" />
-
-        <div class="rounded-control bg-paper p-6">
-            <p class="mt-3 text-xs font-bold uppercase tracking-wider text-teachhq">Owner configuration</p>
-            <h1 class="mt-1 text-xl font-black text-slatecard">Email Integration</h1>
-            <p class="mt-2 text-caption text-ink-soft">Secrets are encrypted before storage and never shown again.</p>
-        </div>
-    </aside>
+    <!-- Left rail: platform navigation -->
+    <x-platform-nav active="email" />
 
     <!-- Main content -->
     <main class="min-w-0 flex-1">
-        <x-breadcrumb :items="[
-            ['label' => 'Platform', 'href' => route('platform.home')],
-            ['label' => 'Email Integration'],
-        ]" />
-
         <div class="mb-6">
             <p class="text-xs font-bold uppercase tracking-wider text-teachhq">BespokeLMS &middot; Platform owner</p>
             <h2 class="mt-1 text-2xl font-black text-slatecard">Email delivery</h2>
@@ -31,7 +18,7 @@
         <div class="mb-6 flex flex-wrap items-center gap-3 rounded-panel border border-line bg-surface p-4">
             <div class="min-w-0 flex-1">
                 <p class="text-sm font-semibold text-slatecard">Send a test</p>
-                <p class="text-caption text-ink-soft">Sends a test message to your own address ({{ $user->email }}) on the enabled transport.</p>
+                <p class="text-caption text-ink-soft">Sends a test message to your own address ({{ $user->email }}) on the enabled transport. Saving a provider or sending a test asks you to confirm your password first.</p>
             </div>
             <form method="POST" action="{{ route('platform.email.test') }}">
                 @csrf
@@ -42,7 +29,6 @@
                 </button>
             </form>
         </div>
-        <p class="mb-6 -mt-3 text-micro text-ink-faint">Saving a provider or sending a test asks you to confirm your password first.</p>
 
         @if (session('status'))
             <div role="status" class="mb-5 flex items-start gap-3 rounded-panel border border-rag-green/40 bg-rag-green-soft p-4 text-sm text-rag-green">
@@ -218,11 +204,6 @@
                     @endforeach
                 </div>
             </section>
-
-            <div class="rounded-panel border border-dashed border-line bg-surface p-5 text-sm text-ink-soft">
-                <p class="font-semibold text-slatecard">Per-tenant sender identities</p>
-                <p class="mt-1 max-w-2xl">Tenants send on the platform transport above, but as their own "from" name, address and verified domain. Those aliases are managed on each tenant's admin console rather than here, so a tenant can only ever change its own identity.</p>
-            </div>
         @endif
     </main>
 </div>
