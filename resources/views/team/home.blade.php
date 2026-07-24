@@ -4,11 +4,8 @@
 
 @section('content')
 <div class="flex flex-col items-start gap-6 lg:flex-row lg:items-start lg:gap-8">
-    {{-- Left rail: header comes from the layout; the rail holds only the
-         workspace switcher for now. The Team workspace UI is migrated in here. --}}
-    <aside class="w-full lg:w-rail lg:flex-none rail-sticky" aria-label="Team workspace navigation">
-        <x-workspace-switcher active="team" />
-    </aside>
+    {{-- Left rail: Team workspace navigation with switcher and menu items. --}}
+    <x-team-nav active="team-members" />
 
     {{-- Blank content region — to be built. --}}
     <div class="min-w-0 flex-1"></div>
