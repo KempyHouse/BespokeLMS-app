@@ -39,7 +39,8 @@
         <p class="text-3xl font-black leading-none tabular-nums text-rag-red">{{ $count }}</p>
         @if ($size !== 's')
             <p class="mt-1 text-mini text-ink-soft">
-                {{ $within7 }} due within 7 days@if ($oldest !== null) &middot; oldest {{ $oldest }} {{ \Illuminate\Support\Str::plural('day', (int) $oldest) }} late@endif
+                {{ $within7 }} due within 7 days
+                @if ($oldest !== null) &middot; oldest {{ $oldest }} {{ \Illuminate\Support\Str::plural('day', (int) $oldest) }} late @endif
             </p>
         @endif
         <div class="mt-auto pt-2">

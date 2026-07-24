@@ -30,7 +30,8 @@
         </p>
         @if ($size !== 's')
             <p class="mt-1 text-mini text-ink-soft">
-                connected@if ($issues > 0) &middot; <span class="font-semibold text-rag-red">{{ $issues }} {{ \Illuminate\Support\Str::plural('issue', $issues) }}</span>@endif
+                connected
+                @if ($issues > 0) &middot; <span class="font-semibold text-rag-red">{{ $issues }} {{ \Illuminate\Support\Str::plural('issue', $issues) }}</span>@endif
             </p>
         @endif
         @if ($size === 'l' && ! empty($providers))
